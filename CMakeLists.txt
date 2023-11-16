@@ -17,6 +17,7 @@ find_package(Threads REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Boost 1.80.0 REQUIRED)
+find_package(date CONFIG REQUIRED)
 
 # In particular -Wreorder should be on to protect our use of std::move() in constructor initialiser lists.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -35,10 +36,11 @@ set(TRDF_COMPILE_DEFS TRDF_ASYNC_LOGGING=$<CONFIG:Release>
                       TRDF_HAS_CHRONO_PARSE=${TRDF_HAS_CHRONO_PARSE})
 
 set(TRDF_LINK_LIBS spdlog::spdlog
-                   Threads::Threads)           # Posix Threads.
+                   Threads::Threads     # Posix Threads.
+                   # Use Howard Hinnant's date library for libcpp implementations that do not implement std::chrono parsing.
+                   $<$<NOT:$<BOOL:${TRDF_HAS_CHRONO_PARSE}>>:date::date>)
 
-set(TRDF_INCLUDE_DIRS # Include Howard Hinnant's date library for libcpp implementations that do not implement std::chrono parsing.
-                      $<$<NOT:$<BOOL:${TRDF_HAS_CHRONO_PARSE}>>:${CMAKE_CURRENT_SOURCE_DIR}/third-party/date-3.0.1/include>)
+set(TRDF_INCLUDE_DIRS $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 #
 # [ Global ]

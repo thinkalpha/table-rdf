@@ -4,7 +4,8 @@
   "dependencies": [
     { "name": "catch2", "version>=": "2.13.8#1" },
     { "name": "spdlog", "version>=": "1.10.0" },
-    { "name": "boost-align", "version>=": "1.80.0" }
+    { "name": "boost-align", "version>=": "1.80.0" },
+    { "name": "date" }
   ],
   "builtin-baseline": "6ca56aeb457f033d344a7106cb3f9f1abf8f4e98",
   "overrides": [

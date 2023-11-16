@@ -1,4 +1,4 @@
-#include <table-rdf/log.h>
+#include "log.h"
 #include <table-rdf/descriptor.h>
 
 #include <catch2/catch.hpp>

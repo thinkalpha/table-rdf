@@ -3,7 +3,7 @@
 // See: https://github.com/catchorg/Catch2/blob/v2.x/docs/slow-compiles.md
 
 #define CATCH_CONFIG_RUNNER
-#include <table-rdf/log.h>
+#include "log.h"
 #include <catch2/catch.hpp>
 
 int main( int argc, char* argv[] )
