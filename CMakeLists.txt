@@ -36,7 +36,6 @@ set(TRDF_COMPILE_DEFS TRDF_ASYNC_LOGGING=$<CONFIG:Release>
                       TRDF_HAS_CHRONO_PARSE=${TRDF_HAS_CHRONO_PARSE})
 
 set(TRDF_LINK_LIBS spdlog::spdlog
-                   Threads::Threads     # Posix Threads.
                    # Use Howard Hinnant's date library for libcpp implementations that do not implement std::chrono parsing.
                    $<$<NOT:$<BOOL:${TRDF_HAS_CHRONO_PARSE}>>:date::date>)
 
