@@ -98,3 +98,17 @@ catch_discover_tests(table-rdf-tests #[[REPORTER junit]] # TODO: Why does this c
                                      OUTPUT_DIR test_output
                                      OUTPUT_PREFIX "trdf_"
                                      OUTPUT_SUFFIX ".xml")
+
+# Install.
+include(GNUInstallDirs)
+
+install(TARGETS table-rdf EXPORT table-rdf-targets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# Generate table-rdf-targets.cmake and install in conventional location.
+install(EXPORT table-rdf-targets FILE table-rdf-targets.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/table-rdf)
+# Install table-rdf-config.cmake in conventional location.
+install(FILES table-rdf-config.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/table-rdf)
+# Install the headers. Note the destination creates a /table-rdf subdirectory
+# in accordance with the installation target_include_directories() above.
+install(DIRECTORY include/table-rdf/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/table-rdf FILES_MATCHING PATTERN "*")
+
+export(EXPORT table-rdf-targets FILE table-rdf-config.cmake)
