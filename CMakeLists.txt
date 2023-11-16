@@ -13,7 +13,6 @@ set(VCPKG_FEATURE_FLAGS versions)
 
 project(table-rdf VERSION 0.1.0 LANGUAGES CXX)
 
-find_package(Threads REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Boost 1.80.0 REQUIRED)
