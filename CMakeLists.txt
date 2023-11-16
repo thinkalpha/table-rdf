@@ -61,8 +61,9 @@ endif()
 #
 add_library               (table-rdf INTERFACE)
 target_include_directories(table-rdf INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+                                               $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>
                                                ${TRDF_INCLUDE_DIRS})
-target_include_directories(table-rdf SYSTEM INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
+
 target_link_libraries     (table-rdf INTERFACE ${TRDF_LINK_LIBS})
 
 target_compile_definitions(table-rdf INTERFACE ${TRDF_COMPILE_DEFS})
