@@ -15,7 +15,7 @@ enum class d_type
   type_numof
 };
 
-namespace tds {
+namespace rdf {
 
 template <class T> struct type_trait
 {
@@ -68,4 +68,4 @@ typedef types_builder<double //,
 
 static type_handler_map k_type_handlers = all_types::get_type_handler_map();
 
-} // namespace tds
+} // namespace rdf

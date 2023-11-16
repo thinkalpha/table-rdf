@@ -40,8 +40,6 @@ set(TRDF_LINK_LIBS spdlog::spdlog
 set(TRDF_INCLUDE_DIRS # Include Howard Hinnant's date library for libcpp implementations that do not implement std::chrono parsing.
                       $<$<NOT:$<BOOL:${TRDF_HAS_CHRONO_PARSE}>>:${CMAKE_CURRENT_SOURCE_DIR}/third-party/date-3.0.1/include>)
 
-set(TRDF_SOURCES include/table-rdf/common.h)
-
 #
 # [ Global ]
 #
@@ -74,12 +72,10 @@ set_property              (TARGET table-rdf PROPERTY MSVC_RUNTIME_LIBRARY "Multi
 # [ Table Record Data Format (RDF) Tests ]
 # This target can be run directly or invoked via Ctest.
 #
-set(TRDF_TEST_SOURCES ${TRDF_SOURCES})
-set(TRDF_CATCH_TESTS src/test/test_main.cpp
-                     src/test/test_core.cpp)
+set(TRDF_CATCH_TESTS test/test_main.cpp
+                     test/test_core.cpp)
 
-add_executable            (table-rdf-tests ${TRDF_CATCH_TESTS}
-                                           ${TRDF_TEST_SOURCES})
+add_executable            (table-rdf-tests ${TRDF_CATCH_TESTS})
 
 set_property              (TARGET table-rdf-tests PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -92,8 +88,7 @@ target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    # https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md#skip-all-benchmarks 
                                                    #[[CATCH_CONFIG_ENABLE_BENCHMARKING]])
 
-target_include_directories(table-rdf-tests PRIVATE ${TRDF_INCLUDE_DIRS})
-target_link_libraries     (table-rdf-tests PRIVATE ${TRDF_LINK_LIBS}         # TODO: Switch this to using the table-rdf target once its library type is finalised.
+target_link_libraries     (table-rdf-tests PRIVATE table-rdf
                                                    Catch2::Catch2)
 
 # Catch2 setup and Ctest integration.

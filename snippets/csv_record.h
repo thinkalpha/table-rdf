@@ -4,7 +4,7 @@
 #include <ranges>
 #include "record.h"
 
-namespace tds
+namespace rdf
 {
 
 class csv_record : public record {
@@ -75,4 +75,4 @@ private:
   values const& values_;
 };
 
-} // namespace tds
+} // namespace rdf

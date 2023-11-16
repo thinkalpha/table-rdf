@@ -28,7 +28,7 @@
 #define SPDLOG_TS(...) SPDLOG_TRACE(__VA_ARGS__) // For logging data from the table server.
 #define SPDLOG_LVL(level) SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_##level
 
-namespace tds {
+namespace rdf {
 
 inline void configure_logging()
 {
@@ -109,7 +109,7 @@ inline void finalize_logging()
   #define DBG_PRINT_BUF(prefix, bufs, count) ((void)0)
 #endif
 
-} // namespace tds
+} // namespace rdf
 
 namespace boost
 {
