@@ -1,0 +1,46 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${vcpkgRoot}/x64-windows/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "windows-msvc-x64"
+        },
+        {
+            "name": "Linux (Mozart)",
+            "includePath": [
+                "${workspaceFolder}/src/**",
+                "${command:cmake.launchTargetDirectory}/vcpkg_installed/x64-linux/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "/opt/gcc/gcc-13.2/bin/g++",
+            "cStandard": "gnu17",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
+            "name": "Linux (WSL2 Debian)",
+            "includePath": [
+                "${workspaceFolder}/src/**",
+                "${command:cmake.launchTargetDirectory}/vcpkg_installed/x64-linux/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "/home/linuxbrew/.linuxbrew/bin/g++-13",
+            "cStandard": "gnu17",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
