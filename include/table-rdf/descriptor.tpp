@@ -74,7 +74,7 @@ namespace rdf
 
   std::string descriptor::describe() const
   {
-    static auto str = [this]() {
+    auto const str = [this]() {
       std::stringstream ss;
       ss << "\n--- " << name() << " ---\n";
       for (auto& f : fields_) {
