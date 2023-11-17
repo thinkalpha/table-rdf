@@ -22,6 +22,9 @@ struct field
   static constexpr index_t  k_null_index = index_t(-1);
   static constexpr size_t   k_max_key_payload = 8;
   static constexpr size_t   k_max_string_payload = 64;
+
+  // TODO: On GCC this is 16 due to float128 being considered a primitive type.
+  // We should instead compute this based on the max alignment in field::k_types.
   static constexpr size_t   k_record_alignment = sizeof(max_align_t);
 
   enum d_type

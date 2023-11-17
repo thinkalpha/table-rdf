@@ -19,7 +19,6 @@ public:
 
   ~record() = default;
 
-private:
   template<typename T> T const* get_ptr(field::offset_t o) const {
     T const* value = reinterpret_cast<T const*>(mem_ + o);
     return value;
@@ -30,7 +29,6 @@ private:
     return value;
   }
 
-public:
   // TODO: Vlad says records don't contain a key. Probably since this is redundant data that can be expressed via collections of records by key.  
   key_t       key(descriptor const& d) const;
   timestamp_t timestamp(descriptor const& d) const;

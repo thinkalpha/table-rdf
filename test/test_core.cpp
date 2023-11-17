@@ -1,5 +1,6 @@
 #include "log.h"
 #include <table-rdf/descriptor.h>
+#include <table-rdf/record.h>
 
 #include <catch2/catch.hpp>
 
@@ -52,10 +53,59 @@ TEST_CASE( "fields_builder", "[core]" )
 
   rdf::descriptor d {"XYZ rdf::descriptor", "%Y%m%d %T", b};
   SPDLOG_DEBUG(d.describe());
+}
 
-  timestamp_t time0 = timestamp_t::clock::now() - 1000s; 
-  timestamp_t time = time0;
+TEST_CASE( "basic usage", "[core]" )
+{
+  using field = rdf::field;
+  rdf::fields_builder b;
+  b.push({ "formula",   "formula description", field::string_type})
+   .push({ "symbol",    "ticker symbol",       field::key_type})
+   .push({ "timestamp", "utc timestamp",       field::timestamp_type })
+   .push({ "field 4",   "field 4 description", field::int32_type })
+   .push({ "field 5",   "field 5 description", field::float32_type })
+   .push({ "field 6",   "field 6 description", field::float64_type })
+   .push({ "field 7",   "field 7 description", field::bool_type })
+   .push({ "field 8",   "field 8 description", field::int32_type });
 
+  rdf::descriptor d {"XYZ rdf::descriptor", "%Y%m%d %T", b};
+  SPDLOG_DEBUG(d.describe());
+
+  constexpr auto k_count = 10;
+
+  SECTION( "record write")
+  {
+    mem_t* mem_alloc = (mem_t*)std::aligned_alloc(field::k_record_alignment, d.mem_size() * k_count);
+    REQUIRE(boost::alignment::is_aligned(field::k_record_alignment, mem_alloc));
+    auto mem = mem_alloc;
+  
+    timestamp_t const time = timestamp_t::clock::now();
+
+    auto fields = d.fields();
+    // Write to record memory.
+    for (int i = 0; i < k_count; ++i) {
+      rdf::raw_time_t raw_time = timestamp_t{time + timestamp_t::duration{i}}.time_since_epoch().count();
+      field::write<rdf::string_t>(mem, fields[0], "_B[_1d:3d]");
+      field::write<rdf::key_t>(mem, fields[1], "AAPL:*");
+      field::write<rdf::raw_time_t>(mem, fields[2], raw_time);
+      field::write<int32_t>(mem, fields[3], i);
+      mem += d.mem_size();
+    }
+
+    SECTION( "record read" )
+    {
+      mem = mem_alloc;
+      for (int i = 0; i < k_count; ++i) {
+        auto record = rdf::record{mem};
+        REQUIRE(record.key(d) == "AAPL:*");
+        REQUIRE(record.timestamp(d) == time + timestamp_t::duration{i});
+        REQUIRE(record.get<int32_t>(fields[3].offset()) == i);
+        mem += d.mem_size();
+      }
+    }
+
+    free(mem_alloc);
+  }
 }
 
 TEST_CASE( "timestamp", "[core]" )
