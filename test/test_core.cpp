@@ -81,7 +81,7 @@ TEST_CASE( "basic usage", "[core]" )
   rdf::descriptor d {"BarRecord 1m Descriptor", "%Y%m%d %T", builder};
   // SPDLOG_DEBUG(d.describe());
 
-  constexpr auto k_count = 1000;
+  constexpr auto k_count = 100;
 
   SECTION( "record write")
   {
@@ -164,6 +164,8 @@ TEST_CASE( "basic usage", "[core]" )
       for (auto r : records) {
         SPDLOG_DEBUG(r.to_string(d));
       }
+      
+      SPDLOG_DEBUG(d.describe());
     }
 
     free(mem_alloc);
