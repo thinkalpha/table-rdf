@@ -1,6 +1,5 @@
 #include "log.h"
-#include <table-rdf/descriptor.h>
-#include <table-rdf/record.h>
+#include <table-rdf/rdf.h>
 
 #include <catch2/catch.hpp>
 
@@ -66,7 +65,6 @@ TEST_CASE( "basic usage", "[core]" )
    .push({ "field 5",   "field 5 description", field::float32_type })
    .push({ "field 6",   "field 6 description", field::float64_type })
    .push({ "field 7",   "field 7 description", field::bool_type })
-   .push({ "field 8",   "field 8 description", field::int32_type });
 
   rdf::descriptor d {"XYZ rdf::descriptor", "%Y%m%d %T", b};
   SPDLOG_DEBUG(d.describe());
@@ -100,7 +98,16 @@ TEST_CASE( "basic usage", "[core]" )
         REQUIRE(record.key(d) == "AAPL:*");
         REQUIRE(record.timestamp(d) == time + timestamp_t::duration{i});
         REQUIRE(record.get<int32_t>(fields[3].offset()) == i);
-        mem += d.mem_size();
+      mem += d.mem_size();
+      }
+    }
+
+    SECTION( "record read via view" )
+    {
+      mspan mem_span{mem_alloc, d.mem_size() * k_count};
+      auto records = rdf::records_view(mem_span, d.mem_size());
+      for (auto r : records) {
+        SPDLOG_DEBUG(r.to_string(d));
       }
     }
 
