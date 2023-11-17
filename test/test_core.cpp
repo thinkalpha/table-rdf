@@ -65,6 +65,7 @@ TEST_CASE( "basic usage", "[core]" )
    .push({ "field 5",   "field 5 description", field::float32_type })
    .push({ "field 6",   "field 6 description", field::float64_type })
    .push({ "field 7",   "field 7 description", field::bool_type })
+   .push({ "field 8",   "field 8 description", field::int32_type });
 
   rdf::descriptor d {"XYZ rdf::descriptor", "%Y%m%d %T", b};
   SPDLOG_DEBUG(d.describe());
