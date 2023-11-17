@@ -23,8 +23,11 @@ public:
              fields_builder const& builder);
 
   std::string_view          name() const { return name_; }
+
   std::vector<field> const& fields() const { return fields_; }
-     field::offset_t        offset(char const* field_name) const { return fields_by_name_.at(field_name).offset_; }
+               field const& fields(char const* field_name) const { return fields_by_name_.at(field_name); }
+  
+     field::offset_t        offset(char const* field_name) const { return fields(field_name).offset_; }
 
      field::offset_t        key_o() const { return key_offset_; }
      field::offset_t        timestamp_o() const { return timestamp_offset_; }

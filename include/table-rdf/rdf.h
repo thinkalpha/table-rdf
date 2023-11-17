@@ -1,18 +1,22 @@
 #pragma once
 
+#include <functional>
 #include "descriptor.h"
 #include "record.h"
 
 namespace rdf
 {
 
-  using transform_t = std::remove_reference<std::remove_reference<rdf::record (*&)(const std::byte &)>::type>::type; // TODO: See if function decltype trick can make this more readable.
-  using records_view_t = std::ranges::transform_view<std::ranges::stride_view<rdf::mspan>, transform_t>;
+  namespace views {
 
-  inline auto records_view(mspan const& memory, size_t record_size) {
-    return memory | 
-           std::views::stride(record_size) |
-           std::views::transform(rdf::mem_to_record);
+    inline auto records(mspan const& memory, descriptor const& d) {
+      return memory | 
+             std::views::stride(d.mem_size()) |
+             std::views::transform(rdf::mem_to_record);
+    }
+
+    using records_view_t = decltype(std::function(records))::result_type;
+
   }
 
 } // namespace rdf
