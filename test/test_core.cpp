@@ -41,14 +41,14 @@ TEST_CASE( "fields_builder", "[core]" )
 {
   using field = rdf::field;
   rdf::fields_builder builder;
-  builder.push({"formula",    "formula description", field::string_type})
-   .push({ "symbol",    "ticker symbol",       field::key_type})
-   .push({ "timestamp", "utc timestamp",       field::timestamp_type })
-   .push({ "field 4",   "field 4 description", field::int32_type })
-   .push({ "field 5",   "field 5 description", field::float32_type })
-   .push({ "field 6",   "field 6 description", field::float64_type })
-   .push({ "field 7",   "field 7 description", field::bool_type })
-   .push({ "field 8",   "field 8 description", field::int32_type });
+  builder.push({"formula",    "formula description", field::string_type, 31})
+         .push({ "symbol",    "ticker symbol",       field::key_type, 31})
+         .push({ "timestamp", "utc timestamp",       field::timestamp_type })
+         .push({ "field 4",   "field 4 description", field::int32_type })
+         .push({ "field 5",   "field 5 description", field::float32_type })
+         .push({ "field 6",   "field 6 description", field::float64_type })
+         .push({ "field 7",   "field 7 description", field::bool_type })
+         .push({ "field 8",   "field 8 description", field::int32_type });
 
   rdf::descriptor d {"XYZ Descriptor", "%Y%m%d %T", builder};
   SPDLOG_DEBUG(d.describe());
@@ -58,9 +58,9 @@ TEST_CASE( "basic usage", "[core]" )
 {
   using field = rdf::field;
   rdf::fields_builder builder;
-  builder.push({ "Formula",          "Formula description",          field::string_type})
-         .push({ "Symbol",           "Ticker Symbol",                field::key_type})
-         .push({ "Timestamp",        "UTC Timestamp",                field::timestamp_type, fmt::runtime("{:>40}") })
+  builder.push({ "Formula",          "Formula description",          field::string_type, 31})
+         .push({ "Symbol",           "Ticker Symbol",                field::key_type, 31})
+         .push({ "Timestamp",        "UTC Timestamp",                field::timestamp_type, field::k_no_payload, fmt::runtime("{:>40}") })
          .push({ "BarSequence",      "BarSequence description",      field::int32_type })
          .push({ "BarOpen",          "BarOpen description",          field::float32_type })
          .push({ "BarHigh",          "BarHigh description",          field::float32_type })
@@ -201,7 +201,7 @@ TEST_CASE( "timestamp", "[core]" )
   {
     using field = rdf::field;
     rdf::fields_builder b;
-    b.push({ "symbol",    "", field::key_type })
+    b.push({ "symbol",    "", field::key_type, 31 })
      .push({ "timestamp", "", field::timestamp_type });
     rdf::descriptor d {"Test Data Descriptor", "%Y%m%d %T",  b};
     auto now_str = d.time_to_str(now);
