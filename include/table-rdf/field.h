@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdint>
 #include <stdfloat>
+#include <ranges>
 
 namespace rdf {
 
@@ -32,6 +33,8 @@ struct field
     key_type = 0,
     timestamp_type,
     char_type,
+    utf_char16_type,
+    utf_char32_type,
     int8_type,
     int16_type,
     int32_type,
@@ -62,23 +65,25 @@ struct field
 #endif
 
   static constexpr std::array<desc_type, type_numof> k_types {
-    desc_type{ key_type,       "*key*",  sizeof(key_size_prefix_t),    alignof(key_size_prefix_t) },
-    desc_type{ timestamp_type, "tstamp", sizeof(raw_time_t),           alignof(raw_time_t) },
-    desc_type{ char_type,      "char",   sizeof(char),                 alignof(char) },
-    desc_type{ int8_type,      "i8",     sizeof(int8_t),               alignof(int8_t) },
-    desc_type{ int16_type,     "i16",    sizeof(int16_t),              alignof(int16_t) },
-    desc_type{ int32_type,     "i32",    sizeof(int32_t),              alignof(int32_t) },
-    desc_type{ int64_type,     "i64",    sizeof(int64_t),              alignof(int64_t) },
-    desc_type{ uint8_type,     "u8",     sizeof(uint8_t),              alignof(uint8_t) },
-    desc_type{ uint16_type,    "u16",    sizeof(uint16_t),             alignof(uint16_t) },
-    desc_type{ uint32_type,    "u32",    sizeof(uint32_t),             alignof(uint32_t) },
-    desc_type{ uint64_type,    "u64",    sizeof(uint64_t),             alignof(uint64_t) },
-    desc_type{ float16_type,   "f16",    sizeof(std::float16_t),       alignof(std::float16_t) },
-    desc_type{ float32_type,   "f32",    sizeof(std::float32_t),       alignof(std::float32_t) },
-    desc_type{ float64_type,   "f64",    sizeof(std::float64_t),       alignof(std::float64_t) },
-    desc_type{ float128_type,  "f128",   sizeof(std::float128_t),      alignof(std::float128_t) },
-    desc_type{ string_type,    "str",    sizeof(string_size_prefix_t), alignof(string_size_prefix_t) },
-    desc_type{ bool_type,      "bool",   sizeof(bool),                 alignof(bool) }
+    desc_type{ key_type,        "*key*",   sizeof(key_size_prefix_t),    alignof(key_size_prefix_t) },
+    desc_type{ timestamp_type,  "tstamp",  sizeof(raw_time_t),           alignof(raw_time_t) },
+    desc_type{ char_type,       "char",    sizeof(char),                 alignof(char) },
+    desc_type{ utf_char16_type, "utf-c16", sizeof(char16_t),             alignof(char16_t) },
+    desc_type{ utf_char32_type, "utf-c32", sizeof(char32_t),             alignof(char32_t) },
+    desc_type{ int8_type,       "i8",      sizeof(int8_t),               alignof(int8_t) },
+    desc_type{ int16_type,      "i16",     sizeof(int16_t),              alignof(int16_t) },
+    desc_type{ int32_type,      "i32",     sizeof(int32_t),              alignof(int32_t) },
+    desc_type{ int64_type,      "i64",     sizeof(int64_t),              alignof(int64_t) },
+    desc_type{ uint8_type,      "u8",      sizeof(uint8_t),              alignof(uint8_t) },
+    desc_type{ uint16_type,     "u16",     sizeof(uint16_t),             alignof(uint16_t) },
+    desc_type{ uint32_type,     "u32",     sizeof(uint32_t),             alignof(uint32_t) },
+    desc_type{ uint64_type,     "u64",     sizeof(uint64_t),             alignof(uint64_t) },
+    desc_type{ float16_type,    "f16",     sizeof(std::float16_t),       alignof(std::float16_t) },
+    desc_type{ float32_type,    "f32",     sizeof(std::float32_t),       alignof(std::float32_t) },
+    desc_type{ float64_type,    "f64",     sizeof(std::float64_t),       alignof(std::float64_t) },
+    desc_type{ float128_type,   "f128",    sizeof(std::float128_t),      alignof(std::float128_t) },
+    desc_type{ string_type,     "str",     sizeof(string_size_prefix_t), alignof(string_size_prefix_t) },
+    desc_type{ bool_type,       "bool",    sizeof(bool),                 alignof(bool) }
   };
 
   static inline bool is_string_type(d_type t) {
@@ -93,7 +98,9 @@ struct field
   field(name_t name,
         description_t description,
         d_type type,
-        size_t payload = 0,    // Records must be fixed-size, so e.g. string types define a maximum string length (payload).
+        // Records must be fixed-size, so e.g. string types define a maximum string length (payload).
+        size_t payload = 0,
+        // Format for printing the field for logging. Default "{>:16}" is right-aligned, padded to 16 characters.
         fmt::basic_runtime<char> fmt = fmt::runtime("{:>16}"),
         offset_t offset = k_null_offset,
         index_t index = k_null_index)
@@ -204,5 +211,14 @@ struct fields_builder
 private:
   std::vector<field> fields_;
 };
+
+static consteval bool check_types() {
+    for (auto const [i, f] : std::views::enumerate(field::k_types)) { 
+    if (f.type_ != i) return false;
+  }
+  return true;
+}
+
+static_assert(check_types(), "order of field::k_types does not match field::d_type enum");
 
 } // namespace rdf
