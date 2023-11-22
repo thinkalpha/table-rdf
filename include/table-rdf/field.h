@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <stdfloat>
 
 namespace rdf {
 
@@ -21,7 +20,8 @@ struct field
 
   static constexpr offset_t k_null_offset = offset_t(-1);
   static constexpr index_t  k_null_index = index_t(-1);
-  static constexpr size_t   k_no_payload = 0;
+  static constexpr size_t   k_max_key_payload = 8;
+  static constexpr size_t   k_max_string_payload = 64;
 
   // TODO: On GCC this is 16 due to float128 being considered a primitive type.
   // We should instead compute this based on the max alignment in field::k_types.
@@ -32,18 +32,10 @@ struct field
     key_type = 0,
     timestamp_type,
     char_type,
-    int8_type,
-    int16_type,
     int32_type,
-    int64_type,
-    uint8_type,
-    uint16_type,
-    uint32_type,
-    uint64_type,
-    float16_type,
     float32_type,
+    int64_type,
     float64_type,
-    float128_type,
     string_type,
     bool_type,
     type_numof
@@ -54,63 +46,46 @@ struct field
     d_type const type_;
     char const* const name_;
     size_t const type_sz_;
+    size_t const payload_sz_;
     size_t const alignment_;
   };
 
-#if (__STDCPP_FLOAT32_T__ != 1) || (__STDCPP_FLOAT64_T__ != 1) || (__STDCPP_FLOAT128_T__ != 1)
-    #error "<stdfloat> types not available"
-#endif
-
+  // TODO: Use new <stdfloat> header with std::float32_t etc. if available?
   static constexpr std::array<desc_type, type_numof> k_types {
-    desc_type{ key_type,       "*key*",  sizeof(key_size_prefix_t),    alignof(key_size_prefix_t) },
-    desc_type{ timestamp_type, "tstamp", sizeof(raw_time_t),           alignof(raw_time_t) },
-    desc_type{ char_type,      "char",   sizeof(char),                 alignof(char) },
-    desc_type{ int8_type,      "i8",     sizeof(int8_t),               alignof(int8_t) },
-    desc_type{ int16_type,     "i16",    sizeof(int16_t),              alignof(int16_t) },
-    desc_type{ int32_type,     "i32",    sizeof(int32_t),              alignof(int32_t) },
-    desc_type{ int64_type,     "i64",    sizeof(int64_t),              alignof(int64_t) },
-    desc_type{ uint8_type,     "u8",     sizeof(uint8_t),              alignof(uint8_t) },
-    desc_type{ uint16_type,    "u16",    sizeof(uint16_t),             alignof(uint16_t) },
-    desc_type{ uint32_type,    "u32",    sizeof(uint32_t),             alignof(uint32_t) },
-    desc_type{ uint64_type,    "u64",    sizeof(uint64_t),             alignof(uint64_t) },
-    desc_type{ float16_type,   "f16",    sizeof(std::float16_t),       alignof(std::float16_t) },
-    desc_type{ float32_type,   "f32",    sizeof(std::float32_t),       alignof(std::float32_t) },
-    desc_type{ float64_type,   "f64",    sizeof(std::float64_t),       alignof(std::float64_t) },
-    desc_type{ float128_type,  "f128",   sizeof(std::float128_t),      alignof(std::float128_t) },
-    desc_type{ string_type,    "str",    sizeof(string_size_prefix_t), alignof(string_size_prefix_t) },
-    desc_type{ bool_type,      "bool",   sizeof(bool),                 alignof(bool) }
+    desc_type{ key_type,       "*key*",  sizeof(key_size_prefix_t),    k_max_key_payload,    alignof(key_size_prefix_t) },
+    desc_type{ timestamp_type, "tstamp", sizeof(raw_time_t),           0,                    alignof(raw_time_t) },
+    desc_type{ char_type,      "char",   sizeof(char),                 0,                    alignof(char) },
+    desc_type{ int32_type,     "i32",    sizeof(int32_t),              0,                    alignof(int32_t) },
+    desc_type{ float32_type,   "f32",    sizeof(float),                0,                    alignof(float) },
+    desc_type{ int64_type,     "i64",    sizeof(int64_t),              0,                    alignof(int64_t) },
+    desc_type{ float64_type,   "f64",    sizeof(double),               0,                    alignof(double) },
+    desc_type{ string_type,    "str",    sizeof(string_size_prefix_t), k_max_string_payload, alignof(string_size_prefix_t) },
+    desc_type{ bool_type,      "bool",   sizeof(bool),                 0,                    alignof(bool) }
   };
 
-  static inline bool is_string_type(d_type t) {
-    return t == string_type ||
-           t == key_type;
-  }
-
-  static inline char const* enum_names_type(d_type t) {
+  static inline char const* enum_names_type(d_type const t) {
     return k_types[t].name_;
   }
 
   field(name_t name,
         description_t description,
         d_type type,
-        size_t payload = 0,    // Records must be fixed-size, so e.g. string types define a maximum string length (payload).
         fmt::basic_runtime<char> fmt = fmt::runtime("{:>16}"),
         offset_t offset = k_null_offset,
         index_t index = k_null_index)
     : name_{name},
       description_{description},
       type_{type},
-      payload_{payload},
       fmt_{fmt},
       offset_{offset},
       index_{index}
   {
-    BOOST_ASSERT_MSG(!is_string_type(type_) || payload_ != k_no_payload, "string types require a maximum payload size to be specified");
+  
   }
 
   // TODO: No point to these being constexpr (unless object declaration is constexpr)?
   constexpr auto type_size() const { return k_types[type_].type_sz_; }
-  constexpr auto payload() const { return payload_; }
+  constexpr auto payload() const { return k_types[type_].payload_sz_; }
   constexpr auto size() const { return type_size() + payload(); }
   constexpr auto align() const { return k_types[type_].alignment_; }
   auto offset() const { return offset_; }
@@ -122,7 +97,6 @@ struct field
   name_t const name_;
   description_t const description_;
   d_type const type_;
-  size_t const payload_;
   // fmt library format specifier for printing (https://hackingcpp.com/cpp/libs/fmt.html).
   fmt::basic_runtime<char> const fmt_;
   offset_t offset_;     // TODO: Keep this const.
@@ -143,7 +117,6 @@ void field::write(mem_t* const record_base, field const& field, Args... args)
     // TODO: Uses 1-byte for strings < 256 bytes, otherwise 2-bytes.
     if constexpr (std::is_same_v<T, std::string_view>)
     {
-      // if constexpr (sizeof(T::value_type) == sizeof(char))
       static_assert(std::is_same_v<string_t, std::string_view>);
       auto const payload = field.payload(); 
       BOOST_ASSERT(payload > 0);
