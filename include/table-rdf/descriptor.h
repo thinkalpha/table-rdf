@@ -25,6 +25,7 @@ public:
   std::string_view          name() const { return name_; }
 
   std::vector<field> const& fields() const { return fields_; }
+               field const& fields(field::index_t field_index) const { BOOST_ASSERT(field_index < fields().size()); return fields()[field_index]; }
                field const& fields(char const* field_name) const { return fields_by_name_.at(field_name); }
   
      field::offset_t        offset(char const* field_name) const { return fields(field_name).offset_; }

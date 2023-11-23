@@ -1,6 +1,6 @@
 #pragma once
 
-enum class d_type
+enum class types::type
 {
   key_type,
   timestamp_type,
@@ -20,12 +20,12 @@ namespace rdf {
 template <class T> struct type_trait
 {
   using concrete_type = T;
-  static d_type const type;
+  static types::type const type;
 	static char const* name;
 };
 
 template <> char const* type_trait<double>::name = "double";
-template <> d_type const type_trait<double>::type = d_type::float64_type;
+template <> types::type const type_trait<double>::type = types::type::float64_type;
 
 static_assert(std::is_same_v<type_trait<double>::concrete_type, double>);
 

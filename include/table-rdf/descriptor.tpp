@@ -21,12 +21,12 @@ namespace rdf
       fields_by_name_.insert({f.name_, f});
 
       // Store the offsets and indices of required fields.
-      if (f.type_ == field::key_type) {
+      if (f.type_ == types::Key8) {
         BOOST_ASSERT(key_offset_ == field::k_null_offset);
         key_offset_ = f.offset_;
         key_index_ = f.index_;
       }
-      else if (f.type_ == field::timestamp_type) {
+      else if (f.type_ == types::Timestamp) {
         BOOST_ASSERT(timestamp_offset_ == field::k_null_offset);
         timestamp_offset_ = f.offset_;
         timestamp_index_ = f.index_;
@@ -78,7 +78,7 @@ namespace rdf
       std::stringstream ss;
       ss << "\n--- " << name() << " ---\n";
       for (auto& f : fields_) {
-        auto field_fmt = fmt::format("{:25} (type: {:8} size: {:3} align: {}, offset: {:4}) - '{}'", f.name_, field::enum_names_type(f.type_), f.size(), f.align(), f.offset_, f.description_);
+        auto field_fmt = fmt::format("{:25} (type: {:8} size: {:3} align: {}, offset: {:4}) - '{}'", f.name_, types::enum_names_type(f.type_), f.size(), f.align(), f.offset_, f.description_);
         ss << field_fmt << "\n";
       }
       ss << "--- size: " << mem_size() << ", alignment: " << field::k_record_alignment << ", time parse string: '" << time_parse_ << "' ---\n";

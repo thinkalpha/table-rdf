@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.h"
+
 #include <fmt/compile.h>
 #include <boost/assert.hpp>
 #include <boost/align/align_up.hpp>
@@ -7,11 +9,14 @@
 
 #include <string>
 #include <vector>
-#include <cstdint>
-#include <stdfloat>
 #include <ranges>
 
 namespace rdf {
+
+namespace concepts {
+  template <typename T> concept string_size_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
+  template <typename T> concept numeric = std::is_floating_point_v<T> || std::is_integral_v<T>;
+}
 
 struct field
 {
@@ -25,79 +30,12 @@ struct field
   static constexpr size_t   k_no_payload = 0;
 
   // TODO: On GCC this is 16 due to float128 being considered a primitive type.
-  // We should instead compute this based on the max alignment in field::k_types.
+  // We should instead compute this based on the max alignment in field::k_type_props.
   static constexpr size_t   k_record_alignment = sizeof(max_align_t);
-
-  enum d_type
-  {
-    key_type = 0,
-    timestamp_type,
-    char_type,
-    utf_char16_type,
-    utf_char32_type,
-    int8_type,
-    int16_type,
-    int32_type,
-    int64_type,
-    uint8_type,
-    uint16_type,
-    uint32_type,
-    uint64_type,
-    float16_type,
-    float32_type,
-    float64_type,
-    float128_type,
-    string_type,
-    bool_type,
-    type_numof
-  };
-
-  // TODO: Use static inheritance heirarchy.
-  struct desc_type {
-    d_type const type_;
-    char const* const name_;
-    size_t const type_sz_;
-    size_t const alignment_;
-  };
-
-#if (__STDCPP_FLOAT32_T__ != 1) || (__STDCPP_FLOAT64_T__ != 1) || (__STDCPP_FLOAT128_T__ != 1)
-    #error "<stdfloat> types not available"
-#endif
-
-  static constexpr std::array<desc_type, type_numof> k_types {
-    desc_type{ key_type,        "*key*",   sizeof(key_size_prefix_t),    alignof(key_size_prefix_t) },
-    desc_type{ timestamp_type,  "tstamp",  sizeof(raw_time_t),           alignof(raw_time_t) },
-    desc_type{ char_type,       "char",    sizeof(char),                 alignof(char) },
-    desc_type{ utf_char16_type, "utf-c16", sizeof(char16_t),             alignof(char16_t) },
-    desc_type{ utf_char32_type, "utf-c32", sizeof(char32_t),             alignof(char32_t) },
-    desc_type{ int8_type,       "i8",      sizeof(int8_t),               alignof(int8_t) },
-    desc_type{ int16_type,      "i16",     sizeof(int16_t),              alignof(int16_t) },
-    desc_type{ int32_type,      "i32",     sizeof(int32_t),              alignof(int32_t) },
-    desc_type{ int64_type,      "i64",     sizeof(int64_t),              alignof(int64_t) },
-    desc_type{ uint8_type,      "u8",      sizeof(uint8_t),              alignof(uint8_t) },
-    desc_type{ uint16_type,     "u16",     sizeof(uint16_t),             alignof(uint16_t) },
-    desc_type{ uint32_type,     "u32",     sizeof(uint32_t),             alignof(uint32_t) },
-    desc_type{ uint64_type,     "u64",     sizeof(uint64_t),             alignof(uint64_t) },
-    desc_type{ float16_type,    "f16",     sizeof(std::float16_t),       alignof(std::float16_t) },
-    desc_type{ float32_type,    "f32",     sizeof(std::float32_t),       alignof(std::float32_t) },
-    desc_type{ float64_type,    "f64",     sizeof(std::float64_t),       alignof(std::float64_t) },
-    desc_type{ float128_type,   "f128",    sizeof(std::float128_t),      alignof(std::float128_t) },
-    desc_type{ string_type,     "str",     sizeof(string_size_prefix_t), alignof(string_size_prefix_t) },
-    desc_type{ bool_type,       "bool",    sizeof(bool),                 alignof(bool) }
-  };
-
-  static inline bool is_string_type(d_type t) {
-    return t == string_type ||
-           t == key_type;
-  }
-
-  static inline char const* enum_names_type(d_type t) {
-    return k_types[t].name_;
-  }
 
   field(name_t name,
         description_t description,
-        d_type type,
+        types::type type,
         // Records must be fixed-size, so e.g. string types define a maximum string length (payload).
         size_t payload = 0,
         // Format for printing the field for logging. Default "{>:16}" is right-aligned, padded to 16 characters.
@@ -116,19 +54,27 @@ struct field
   }
 
   // TODO: No point to these being constexpr (unless object declaration is constexpr)?
-  constexpr auto type_size() const { return k_types[type_].type_sz_; }
+  constexpr auto type_size() const { return types::k_type_props[type_].size_; }
   constexpr auto payload() const { return payload_; }
   constexpr auto size() const { return type_size() + payload(); }
-  constexpr auto align() const { return k_types[type_].alignment_; }
+  constexpr auto align() const { return types::k_type_props[type_].alignment_; }
   auto offset() const { return offset_; }
   auto index() const { return index_; }
 
-  template <std::semiregular T, typename... Args> static
-  void write(mem_t* const record_base, field const& field, Args... args);
+  template <types::type T, concepts::numeric V>
+  inline void write(mem_t* const record_start, V const value) const;
 
+  template <types::type T>
+  inline void write(mem_t* const record_start, string_t const value) const;
+
+private:
+  template<concepts::string_size_prefix T>
+  inline void write_string(mem_t* const record_start, string_t const value) const;
+
+public:
   name_t const name_;
   description_t const description_;
-  d_type const type_;
+  types::type const type_;
   size_t const payload_;
   // fmt library format specifier for printing (https://hackingcpp.com/cpp/libs/fmt.html).
   fmt::basic_runtime<char> const fmt_;
@@ -136,51 +82,67 @@ struct field
   index_t index_;
 };
 
-template <std::semiregular T, typename... Args> inline
-void field::write(mem_t* const record_base, field const& field, Args... args)
+template <types::type T, concepts::numeric V>
+void field::write(mem_t* const record_start, V const value) const
 {
-    mem_t* const mem = record_base + field.offset();
-    BOOST_ASSERT(boost::alignment::is_aligned(field.align(), mem));
+  BOOST_ASSERT(payload() == 0);
+  BOOST_ASSERT_MSG(sizeof(V) == size(), fmt::format("field '{}' = {}B which does not match sizeof({}) = {}B",
+                                                           name_, size(), typeid(V).name(), sizeof(V)).c_str());
 
-    // For string_view types, this *copies* the source string data into 
-    // the record_block memory.
-    //
-    // Memory layout: |size prefix (u8, u16)|char data for string_view...|
-    //                |<--------------- field.size() ------------------->|
-    // TODO: Uses 1-byte for strings < 256 bytes, otherwise 2-bytes.
-    if constexpr (std::is_same_v<T, std::string_view>)
-    {
-      // if constexpr (sizeof(T::value_type) == sizeof(char))
-      static_assert(std::is_same_v<string_t, std::string_view>);
-      auto const payload = field.payload(); 
-      BOOST_ASSERT(payload > 0);
+  mem_t* const mem = record_start + offset();
+  BOOST_ASSERT(boost::alignment::is_aligned(align(), mem));
 
-      using char_type = std::string_view::value_type;
-      std::string_view const tmp{args...};
+  // new (mem) V{value};
+  *reinterpret_cast<V*>(mem) = value;
+}
 
-      auto const size = tmp.size() * sizeof(char_type);
-      if (size > payload) {
-        throw std::runtime_error("string too large for payload");
-      }
+template<concepts::string_size_prefix T> 
+void field::write_string(mem_t* const record_start, string_t const value) const
+{
+  BOOST_ASSERT(payload() > 0);
 
-      // This could be constexpr when we add type traits and also adapt to uint16_t prefix.
-      if (size != (uint8_t)size) {
-        throw std::runtime_error("string lengths must fit in 8-bits");
-      }
-      auto const char_mem = mem + sizeof(uint8_t);
-      *reinterpret_cast<uint8_t*>(mem) = (uint8_t)size;
+  using char_type = string_t::value_type;
+  auto const size = value.size() * sizeof(char_type);
+  if (size > payload()) {
+    throw std::runtime_error("string too large for payload");
+  }
 
-      BOOST_ASSERT(boost::alignment::is_aligned(alignof(char_type), char_mem));
-      std::memcpy(char_mem, tmp.data(), size);
-    }
-    // Non-string types.
-    else {
-      BOOST_ASSERT(field.payload() == 0);
-      BOOST_ASSERT_MSG(sizeof(T) == field.size(), fmt::format("field '{}' = {}B which does not match sizeof({}) = {}B",
-                                                              field.name_, field.size(), typeid(T).name(), sizeof(T)).c_str());
-      new (mem) T{args...};
-    }
-} 
+  if (size != (T)size) {
+    throw std::runtime_error("string lengths must fit in 8-bits");
+  }
+
+  mem_t* const mem = record_start + offset();
+  BOOST_ASSERT(boost::alignment::is_aligned(align(), mem));
+  auto const char_mem = mem + sizeof(T);
+  *reinterpret_cast<uint8_t*>(mem) = (T)size;
+
+  BOOST_ASSERT(boost::alignment::is_aligned(alignof(char_type), char_mem));
+  std::memcpy(char_mem, value.data(), size);
+}
+
+template<>
+void field::write<types::String8>(mem_t* const record_start, string_t const value) const
+{
+  write_string<uint8_t>(record_start, value);
+}
+
+template<>
+void field::write<types::String16>(mem_t* const record_start, string_t const value) const
+{
+  write_string<uint16_t>(record_start, value);
+}
+
+template<>
+void field::write<types::Key8>(mem_t* const record_start, string_t const value) const
+{
+  write_string<uint8_t>(record_start, value);
+}
+
+template<>
+void field::write<types::Key16>(mem_t* const record_start, string_t const value) const
+{
+  write_string<uint16_t>(record_start, value);
+}
 
 // Helper that calculates offsets as fields are added, taking the field alignment property into account.
 struct fields_builder
@@ -212,13 +174,13 @@ private:
   std::vector<field> fields_;
 };
 
-static consteval bool check_types() {
-    for (auto const [i, f] : std::views::enumerate(field::k_types)) { 
+static constexpr bool check_types() {
+  for (auto const [i, f] : std::views::enumerate(types::k_type_props)) { 
     if (f.type_ != i) return false;
   }
   return true;
 }
 
-static_assert(check_types(), "order of field::k_types does not match field::d_type enum");
+static_assert(check_types(), "order of field::k_type_props does not match field::types::type enum");
 
 } // namespace rdf

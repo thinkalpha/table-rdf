@@ -75,31 +75,31 @@ inline std::string record::to_string(descriptor const& desc) const
   auto out_it = std::back_inserter(out);
   for (auto f : desc.fields()) {
     switch(f.type_) {
-      case field::key_type:
+      case types::Key8:
         fmt::format_to(out_it, f.fmt_, key(desc));
         break;
-      case field::timestamp_type:
+      case types::Timestamp:
         fmt::format_to(out_it, f.fmt_, timestamp_str(desc));
         break;
-      case field::char_type:
+      case types::Char:
         fmt::format_to(out_it, f.fmt_, get<char>(f.offset_));
         break;
-      case field::int32_type:
+      case types::Int32:
         fmt::format_to(out_it, f.fmt_, get<int32_t>(f.offset_));
         break;
-      case field::float32_type:
+      case types::Float32:
         fmt::format_to(out_it, f.fmt_, get<float>(f.offset_));
         break;
-      case field::int64_type:
+      case types::Int64:
         fmt::format_to(out_it, f.fmt_, get<int64_t>(f.offset_));
         break;
-      case field::float64_type:
+      case types::Float64:
         fmt::format_to(out_it, f.fmt_, get<double>(f.offset_));
         break;
-      case field::string_type:
+      case types::String8:
         fmt::format_to(out_it, f.fmt_, get<std::string_view>(f.offset_));
         break;
-      case field::bool_type:
+      case types::Bool:
         fmt::format_to(out_it, f.fmt_, get<bool>(f.offset_));
         break;
       default:
