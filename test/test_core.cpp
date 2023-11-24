@@ -101,9 +101,8 @@ TEST_CASE( "basic usage", "[core]" )
       auto const t = time + timestamp_t::duration{i};
       rdf::raw_time_t raw_time = timestamp_t{t}.time_since_epoch().count();
 
-      // TODO: Improve this interface to something like d.fields("Symbol").write(mem, "AAPL:*);
-      d.fields("Formula")        .write<String8> (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
-      d.fields("Symbol")         .write<Key8>    (mem, fmt::format("AAPL_{}:*", i % 10));
+      d.fields("Formula")        .write<String8>  (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
+      d.fields("Symbol")         .write<Key8>     (mem, fmt::format("AAPL_{}:*", i % 10));
       d.fields("Timestamp")      .write<Timestamp>(mem, raw_time);
       d.fields("BarSequence")    .write<Int32>    (mem, i);
       d.fields("BarOpen")        .write<Float32>  (mem, i * 1.f);
@@ -121,6 +120,7 @@ TEST_CASE( "basic usage", "[core]" )
       d.fields("BarLastVolume")  .write<Int32>    (mem, i << 6);
       d.fields("BarTotalVolume") .write<Int32>    (mem, i << 7);
       d.fields("BarTradeCount")  .write<Int32>    (mem, i << 8);
+
       mem += d.mem_size();
     }
 

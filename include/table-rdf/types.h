@@ -7,6 +7,7 @@
 namespace rdf {
 namespace types {
 
+// TODO: Consider using type traits.
 enum type
 {
   Key8 = 0,   // Key string with 8-bit size prefix.

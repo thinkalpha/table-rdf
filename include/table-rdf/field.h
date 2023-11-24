@@ -58,18 +58,28 @@ struct field
   constexpr auto payload() const { return payload_; }
   constexpr auto size() const { return type_size() + payload(); }
   constexpr auto align() const { return types::k_type_props[type_].alignment_; }
-  auto offset() const { return offset_; }
-  auto index() const { return index_; }
+            auto offset() const { return offset_; }
+            auto index() const { return index_; }
 
   template <types::type T, concepts::numeric V>
-  inline void write(mem_t* const record_start, V const value) const;
+            void write(mem_t* const base, V const value) const;
 
   template <types::type T>
-  inline void write(mem_t* const record_start, string_t const value) const;
+            void write(mem_t* const base, string_t const value) const;
+
+  template <types::type T, concepts::numeric V>
+               V read(mem_t* const base) const;
+
+  // template<concepts::string_size_prefix P>
+  // string_t const read(mem_t* const base) const;
+
 
 private:
-  template<concepts::string_size_prefix T>
-  inline void write_string(mem_t* const record_start, string_t const value) const;
+  template<concepts::string_size_prefix P>
+  void write_str(mem_t* const base, string_t const value) const;
+
+  template<typename T>
+  T*   offset_ptr(mem_t* const base) const;
 
 public:
   name_t const name_;
@@ -81,68 +91,6 @@ public:
   offset_t offset_;     // TODO: Keep this const.
   index_t index_;
 };
-
-template <types::type T, concepts::numeric V>
-void field::write(mem_t* const record_start, V const value) const
-{
-  BOOST_ASSERT(payload() == 0);
-  BOOST_ASSERT_MSG(sizeof(V) == size(), fmt::format("field '{}' = {}B which does not match sizeof({}) = {}B",
-                                                           name_, size(), typeid(V).name(), sizeof(V)).c_str());
-
-  mem_t* const mem = record_start + offset();
-  BOOST_ASSERT(boost::alignment::is_aligned(align(), mem));
-
-  // new (mem) V{value};
-  *reinterpret_cast<V*>(mem) = value;
-}
-
-template<concepts::string_size_prefix T> 
-void field::write_string(mem_t* const record_start, string_t const value) const
-{
-  BOOST_ASSERT(payload() > 0);
-
-  using char_type = string_t::value_type;
-  auto const size = value.size() * sizeof(char_type);
-  if (size > payload()) {
-    throw std::runtime_error("string too large for payload");
-  }
-
-  if (size != (T)size) {
-    throw std::runtime_error("string lengths must fit in 8-bits");
-  }
-
-  mem_t* const mem = record_start + offset();
-  BOOST_ASSERT(boost::alignment::is_aligned(align(), mem));
-  auto const char_mem = mem + sizeof(T);
-  *reinterpret_cast<uint8_t*>(mem) = (T)size;
-
-  BOOST_ASSERT(boost::alignment::is_aligned(alignof(char_type), char_mem));
-  std::memcpy(char_mem, value.data(), size);
-}
-
-template<>
-void field::write<types::String8>(mem_t* const record_start, string_t const value) const
-{
-  write_string<uint8_t>(record_start, value);
-}
-
-template<>
-void field::write<types::String16>(mem_t* const record_start, string_t const value) const
-{
-  write_string<uint16_t>(record_start, value);
-}
-
-template<>
-void field::write<types::Key8>(mem_t* const record_start, string_t const value) const
-{
-  write_string<uint8_t>(record_start, value);
-}
-
-template<>
-void field::write<types::Key16>(mem_t* const record_start, string_t const value) const
-{
-  write_string<uint16_t>(record_start, value);
-}
 
 // Helper that calculates offsets as fields are added, taking the field alignment property into account.
 struct fields_builder
@@ -174,13 +122,6 @@ private:
   std::vector<field> fields_;
 };
 
-static constexpr bool check_types() {
-  for (auto const [i, f] : std::views::enumerate(types::k_type_props)) { 
-    if (f.type_ != i) return false;
-  }
-  return true;
-}
-
-static_assert(check_types(), "order of field::k_type_props does not match field::types::type enum");
-
 } // namespace rdf
+
+#include "field.tpp"
