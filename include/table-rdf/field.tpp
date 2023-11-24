@@ -44,7 +44,7 @@ void field::write_str(mem_t* const base, string_t const value) const
     throw std::runtime_error("string lengths must fit in 8-bits");
   }
 
-  auto mem = offset_ptr<char_type>(base);
+  auto mem = offset_ptr<mem_t>(base);
   *reinterpret_cast<P*>(mem) = (P)size;       // Write length prefix.
   auto const char_mem = mem + sizeof(P);      // TODO: Unit test alignment for 8-bit and 16-bit prefixes.
   BOOST_ASSERT(bal::is_aligned(alignof(char_type), char_mem));
@@ -52,44 +52,56 @@ void field::write_str(mem_t* const base, string_t const value) const
 }
 
 template<>
-void field::write<types::String8>(mem_t* const base, string_t const value) const
-{
+void field::write<types::String8>(mem_t* const base, string_t const value) const {
   write_str<uint8_t>(base, value);
 }
 
 template<>
-void field::write<types::String16>(mem_t* const base, string_t const value) const
-{
+void field::write<types::String16>(mem_t* const base, string_t const value) const {
   write_str<uint16_t>(base, value);
 }
 
 template<>
-void field::write<types::Key8>(mem_t* const base, string_t const value) const
-{
+void field::write<types::Key8>(mem_t* const base, string_t const value) const {
   write_str<uint8_t>(base, value);
 }
 
 template<>
-void field::write<types::Key16>(mem_t* const base, string_t const value) const
-{
+void field::write<types::Key16>(mem_t* const base, string_t const value) const {
   write_str<uint16_t>(base, value);
 }
 
 template <types::type T, concepts::numeric V>
-V field::read(mem_t* const base) const
-{
+V field::read(mem_t* const base) const {
   return *offset_ptr<V>(base);
 }
 
-// template<>
-// template<concepts::string_size_prefix P>
-// string_t const field::read<types::Key8>(mem_t* const base) const
-// {
-//   BOOST_ASSERT(payload() > 0);
-//   auto const length = read<P>(base);
-//   return std::string_view(get_ptr<char>(o + sizeof(uint8_t)), length);
-// }
+template<>
+string_t const field::read<types::String8>(mem_t* const base) const {
+  return read_str<uint8_t>(base);
+}
 
+template<>
+string_t const field::read<types::String16>(mem_t* const base) const {
+  return read_str<uint16_t>(base);
+}
+
+template<>
+string_t const field::read<types::Key8>(mem_t* const base) const {
+  return read_str<uint8_t>(base);
+}
+
+template<>
+string_t const field::read<types::Key16>(mem_t* const base) const {
+  return read_str<uint16_t>(base);
+}
+
+template<concepts::string_size_prefix P>
+string_t const field::read_str(mem_t* const base) const
+{
+  auto const length = read<P>(o);
+  return std::string_view(get_ptr<char>(o + sizeof(uint8_t)), length);
+}
 
 static constexpr bool check_types() {
   for (auto const [i, f] : std::views::enumerate(types::k_type_props)) { 

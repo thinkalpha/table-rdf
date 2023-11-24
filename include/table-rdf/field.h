@@ -70,13 +70,15 @@ struct field
   template <types::type T, concepts::numeric V>
                V read(mem_t* const base) const;
 
-  // template<concepts::string_size_prefix P>
-  // string_t const read(mem_t* const base) const;
-
+  template <types::type T>
+  string_t const read(mem_t* const base) const;
 
 private:
   template<concepts::string_size_prefix P>
   void write_str(mem_t* const base, string_t const value) const;
+
+  template<concepts::string_size_prefix P>
+  string_t const read_str(mem_t* const base) const;
 
   template<typename T>
   T*   offset_ptr(mem_t* const base) const;
