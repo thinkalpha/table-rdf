@@ -55,23 +55,19 @@ struct field
   auto index() const { return index_; }
 
   template <types::type T, concepts::field_value V>
-            void write(mem_t* const base, V const value) const;
+            void write(mem_t* base, V const value) const;
 
   template <types::type T, concepts::field_value V>
-         V const read(mem_t* const base) const;
+         V const read(mem_t const* base) const;
 
 private:
-  template<concepts::string_size_prefix P>
-  void write_str(mem_t* const base, string_t const value) const;
+  template<concepts::string_prefix P> void           write_str(mem_t* base, string_t const value) const;
+  template<concepts::string_prefix P> string_t const read_str(mem_t const* base) const;
 
-  template<concepts::string_size_prefix P>
-  string_t const read_str(mem_t* const base) const;
+  template<typename T>  T const* offset_ptr(mem_t const* base) const;
+  template<typename T>  T*       offset_ptr(mem_t* base) const;
 
-  template<typename T>
-  T*   offset_ptr(mem_t* const base) const;
-
-  template <types::type T, typename V>
-  void validate() const;
+  template <types::type T, typename V> void validate() const;
 
 public:
   name_t const name_;

@@ -13,7 +13,16 @@ namespace bal = boost::alignment;
 #endif
 
 template<typename T>
-T* field::offset_ptr(mem_t* const base) const
+T const* field::offset_ptr(mem_t const* base) const
+{
+  auto ptr = reinterpret_cast<T const*>(base + offset());
+  BOOST_ASSERT(bal::is_aligned(align(), ptr));
+  BOOST_ASSERT(alignof(T) == align());
+  return ptr;
+}
+
+template<typename T>
+T* field::offset_ptr(mem_t* base) const
 {
   auto ptr = reinterpret_cast<T*>(base + offset());
   BOOST_ASSERT(bal::is_aligned(align(), ptr));
@@ -23,7 +32,7 @@ T* field::offset_ptr(mem_t* const base) const
 
 // TODO: Separate write_str functions at the top level, with optional param to pass in the length to avoid length calculation on the fly.
 template <types::type T, concepts::field_value V>
-void field::write(mem_t* const base, V const value) const
+void field::write(mem_t* base, V const value) const
 {
   DBG_VALIDATE_FIELD(T, V);
   if constexpr(concepts::numeric<V>)
@@ -46,7 +55,7 @@ void field::write(mem_t* const base, V const value) const
 }
 
 template <types::type T, concepts::field_value V>
-V const field::read(mem_t* const base) const
+V const field::read(mem_t const* base) const
 {
   DBG_VALIDATE_FIELD(T, V);
   if constexpr (concepts::numeric<V>) {
@@ -67,8 +76,8 @@ V const field::read(mem_t* const base) const
 }
 
 
-template<concepts::string_size_prefix P>
-void field::write_str(mem_t* const base, string_t const value) const
+template<concepts::string_prefix P>
+void field::write_str(mem_t* base, string_t const value) const
 {
   using char_type = string_t::value_type;
 
@@ -90,12 +99,12 @@ void field::write_str(mem_t* const base, string_t const value) const
   std::memcpy(char_mem, value.data(), size);     // Write string.
 }
 
-template<concepts::string_size_prefix P>
-string_t const field::read_str(mem_t* const base) const
+template<concepts::string_prefix P>
+string_t const field::read_str(mem_t const* base) const
 {
   using char_type = string_t::value_type;
-  auto const length = *offset_ptr<P>(base) / sizeof(char_type);
-  auto const chars = offset_ptr<string_t::value_type>(base + sizeof(P));
+  auto const length = *offset_ptr<P const>(base) / sizeof(char_type);
+  auto const chars = offset_ptr<string_t::value_type const>(base + sizeof(P));
   return { chars, length };
 }
 
