@@ -9,14 +9,8 @@
 
 #include <string>
 #include <vector>
-#include <ranges>
 
 namespace rdf {
-
-namespace concepts {
-  template <typename T> concept string_size_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
-  template <typename T> concept numeric = std::is_floating_point_v<T> || std::is_integral_v<T>;
-}
 
 struct field
 {
@@ -53,25 +47,18 @@ struct field
     BOOST_ASSERT_MSG(!is_string_type(type_) || payload_ != k_no_payload, "string types require a maximum payload size to be specified");
   }
 
-  // TODO: No point to these being constexpr (unless object declaration is constexpr)?
-  constexpr auto type_size() const { return types::k_type_props[type_].size_; }
-  constexpr auto payload() const { return payload_; }
-  constexpr auto size() const { return type_size() + payload(); }
-  constexpr auto align() const { return types::k_type_props[type_].alignment_; }
-            auto offset() const { return offset_; }
-            auto index() const { return index_; }
+  auto type_size() const { return types::k_type_props[type_].size_; }
+  auto payload() const { return payload_; }
+  auto size() const { return type_size() + payload(); }
+  auto align() const { return types::k_type_props[type_].alignment_; }
+  auto offset() const { return offset_; }
+  auto index() const { return index_; }
 
-  template <types::type T, concepts::numeric V>
+  template <types::type T, concepts::field_value V>
             void write(mem_t* const base, V const value) const;
 
-  template <types::type T>
-            void write(mem_t* const base, string_t const value) const;
-
-  template <types::type T, concepts::numeric V>
-               V read(mem_t* const base) const;
-
-  template <types::type T>
-  string_t const read(mem_t* const base) const;
+  template <types::type T, concepts::field_value V>
+         V const read(mem_t* const base) const;
 
 private:
   template<concepts::string_size_prefix P>
@@ -82,6 +69,9 @@ private:
 
   template<typename T>
   T*   offset_ptr(mem_t* const base) const;
+
+  template <types::type T, typename V>
+  void validate() const;
 
 public:
   name_t const name_;

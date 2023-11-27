@@ -5,6 +5,14 @@
 #include <array>
 
 namespace rdf {
+namespace concepts {
+  template <typename T> concept string_size_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
+  
+  // TODO: Elaborate numeric so that it is precisely the primitive types that we map to in types::k_type_props.
+  template <typename T> concept numeric = std::is_floating_point_v<T> || std::is_integral_v<T>;
+  template <typename T> concept string = std::is_convertible_v<T, string_t>;
+  template <typename T> concept field_value = numeric<T> || string<T>;
+}
 namespace types {
 
 // TODO: Consider using type traits.
@@ -73,12 +81,29 @@ static inline char const* enum_names_type(type t) {
   return k_type_props[t].name_;
 }
 
-static inline bool is_string_type(type t) {
-  return t == String8 ||
-         t == Key8 ||
-         t == String16 ||
-         t == Key16;
+inline constexpr bool is_string8_type(type t) {
+  return t == String8 || t == Key8;
 }
+
+inline constexpr bool is_string16_type(type t) {
+  return t == String16 || t == Key16;
+}
+
+inline constexpr bool is_string_type(type t) {
+  return is_string8_type(t) || is_string16_type(t);
+}
+
+static inline constexpr bool check_types() {
+  for (size_t i = 0; i < k_type_props.size(); ++i) { 
+    if (k_type_props[i].type_ != i)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+static_assert(check_types(), "order of field::k_type_props does not match field::types::type enum");
 
 } // namespace types
 } // namespace rdf

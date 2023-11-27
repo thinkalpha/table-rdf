@@ -9,6 +9,8 @@
 namespace rdf {
 namespace util {
 
+template<typename> inline constexpr bool always_false_v = false;
+
 //
 // Timestamp parsing and printing.
 //
