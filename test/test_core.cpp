@@ -1,5 +1,6 @@
 #include "log.h"
 #include <table-rdf/rdf.h>
+#include <table-rdf/type_traits.h>
 
 #include <catch2/catch.hpp>
 
@@ -99,11 +100,10 @@ TEST_CASE( "basic usage", "[core]" )
     for (int i = 0; i < k_count; ++i)
     {
       auto const t = time + timestamp_t::duration{i};
-      rdf::raw_time_t raw_time = timestamp_t{t}.time_since_epoch().count();
 
       d.fields("Formula")        .write<String8>  (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
       d.fields("Symbol")         .write<Key8>     (mem, fmt::format("AAPL_{}:*", i % 10));
-      d.fields("Timestamp")      .write<Timestamp>(mem, raw_time);
+      d.fields("Timestamp")      .write<Timestamp>(mem, t);
       d.fields("BarSequence")    .write<Int32>    (mem, i);
       d.fields("BarOpen")        .write<Float32>  (mem, i * 1.f);
       d.fields("BarHigh")        .write<Float32>  (mem, i * 10.f);
@@ -130,27 +130,29 @@ TEST_CASE( "basic usage", "[core]" )
       for (int i = 0; i < k_count; ++i)
       {
         auto record = rdf::record{mem};
-        REQUIRE(record.get<int32_t>(fields[3].offset()) == i);
+        REQUIRE(record.get<Int32>(fields[3]) == i);
 
-        REQUIRE(record.get<string_t>    (d.fields("Formula").offset())          == fmt::format("_B[_{}d:{}d]", i, i + 1));
-        REQUIRE(record.key(d)                                                   == fmt::format("AAPL_{}:*", i % 10));
-        REQUIRE(record.timestamp(d)                                             == time + timestamp_t::duration{i});
-        REQUIRE(record.get<int32_t>     (d.fields("BarSequence").offset())      == i);
-        REQUIRE(record.get<float>       (d.fields("BarOpen").offset())          == i * 1.f);
-        REQUIRE(record.get<float>       (d.fields("BarHigh").offset())          == i * 10.f);
-        REQUIRE(record.get<float>       (d.fields("BarLow").offset())           == i * 100.f);
-        REQUIRE(record.get<float>       (d.fields("BarClose").offset())         == i * 1000.f);
-        REQUIRE(record.get<float>       (d.fields("BarVolume").offset())        == i * 10000.f);
-        REQUIRE(record.get<int32_t>     (d.fields("BarVWAPVolume").offset())    == i << 1);
-        REQUIRE(record.get<int64_t>     (d.fields("BarVWAPNotional").offset())  == i << 2);
-        REQUIRE(record.get<int64_t>     (d.fields("BarNotional").offset())      == i << 3);
-        REQUIRE(record.get<float>       (d.fields("BarLastBid").offset())       == i * 100000.f);
-        REQUIRE(record.get<int32_t>     (d.fields("BarLastBidSize").offset())   == i << 4);
-        REQUIRE(record.get<float>       (d.fields("BarLastAsk").offset())       == i * 1000000.f);
-        REQUIRE(record.get<int32_t>     (d.fields("BarLastAskSize").offset())   == i << 5);
-        REQUIRE(record.get<int32_t>     (d.fields("BarLastVolume").offset())    == i << 6);
-        REQUIRE(record.get<int32_t>     (d.fields("BarTotalVolume").offset())   == i << 7);
-        REQUIRE(record.get<int32_t>     (d.fields("BarTradeCount").offset())    == i << 8);
+        auto const t = time + timestamp_t::duration{i};
+
+        REQUIRE(record.get<String8>  (d.fields("Formula"))          == fmt::format("_B[_{}d:{}d]", i, i + 1));
+        REQUIRE(record.get<Key8>     (d.fields("Symbol"))           == fmt::format("AAPL_{}:*", i % 10));
+        REQUIRE(record.get<Timestamp>(d.fields("Timestamp"))        == t);
+        REQUIRE(record.get<Int32>    (d.fields("BarSequence"))      == i);
+        REQUIRE(record.get<Float32>  (d.fields("BarOpen"))          == i * 1.f);
+        REQUIRE(record.get<Float32>  (d.fields("BarHigh"))          == i * 10.f);
+        REQUIRE(record.get<Float32>  (d.fields("BarLow"))           == i * 100.f);
+        REQUIRE(record.get<Float32>  (d.fields("BarClose"))         == i * 1000.f);
+        REQUIRE(record.get<Float32>  (d.fields("BarVolume"))        == i * 10000.f);
+        REQUIRE(record.get<Int32>    (d.fields("BarVWAPVolume"))    == i << 1);
+        REQUIRE(record.get<Int64>    (d.fields("BarVWAPNotional"))  == i << 2);
+        REQUIRE(record.get<Int64>    (d.fields("BarNotional"))      == i << 3);
+        REQUIRE(record.get<Float32>  (d.fields("BarLastBid"))       == i * 100000.f);
+        REQUIRE(record.get<Int32>    (d.fields("BarLastBidSize"))   == i << 4);
+        REQUIRE(record.get<Float32>  (d.fields("BarLastAsk"))       == i * 1000000.f);
+        REQUIRE(record.get<Int32>    (d.fields("BarLastAskSize"))   == i << 5);
+        REQUIRE(record.get<Int32>    (d.fields("BarLastVolume"))    == i << 6);
+        REQUIRE(record.get<Int32>    (d.fields("BarTotalVolume"))   == i << 7);
+        REQUIRE(record.get<Int32>    (d.fields("BarTradeCount"))    == i << 8);
 
         mem += d.mem_size();
       }

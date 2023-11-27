@@ -6,7 +6,7 @@
 
 namespace rdf {
 namespace concepts {
-  template <typename T> concept string_size_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
+  template <typename T> concept string_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
   
   // TODO: Elaborate numeric so that it is precisely the primitive types that we map to in types::k_type_props.
   template <typename T> concept numeric = std::is_floating_point_v<T> || std::is_integral_v<T>;
@@ -20,6 +20,8 @@ enum type
 {
   Key8 = 0,   // Key string with 8-bit size prefix.
   Key16,      // Key string with 16-bit size prefix.
+  String8,    // String with 8-bit size prefix.
+  String16,   // String with 16-bit size prefix.
   Timestamp,
   Char,
   Utf_Char16,
@@ -36,8 +38,6 @@ enum type
   Float32,
   Float64,
   Float128,
-  String8,    // String with 8-bit size prefix.
-  String16,   // String with 16-bit size prefix.
   Bool,
   type_numof
 };
@@ -56,6 +56,8 @@ struct type_props {
 static constexpr std::array<type_props, type_numof> k_type_props {
   type_props{ Key8,       "*key8*",  sizeof(uint8_t),              alignof(uint8_t) },
   type_props{ Key16,      "*key16*", sizeof(uint16_t),             alignof(uint16_t) },
+  type_props{ String8,    "str8",    sizeof(uint8_t),              alignof(uint8_t) },
+  type_props{ String16,   "str16",   sizeof(uint16_t),             alignof(uint16_t) },
   type_props{ Timestamp,  "tstamp",  sizeof(raw_time_t),           alignof(raw_time_t) },
   type_props{ Char,       "char",    sizeof(char),                 alignof(char) },
   type_props{ Utf_Char16, "utf-c16", sizeof(char16_t),             alignof(char16_t) },
@@ -72,8 +74,6 @@ static constexpr std::array<type_props, type_numof> k_type_props {
   type_props{ Float32,    "f32",     sizeof(std::float32_t),       alignof(std::float32_t) },
   type_props{ Float64,    "f64",     sizeof(std::float64_t),       alignof(std::float64_t) },
   type_props{ Float128,   "f128",    sizeof(std::float128_t),      alignof(std::float128_t) },
-  type_props{ String8,    "str8",    sizeof(uint8_t),              alignof(uint8_t) },
-  type_props{ String16,   "str16",   sizeof(uint16_t),             alignof(uint16_t) },
   type_props{ Bool,       "bool",    sizeof(bool),                 alignof(bool) }
 };
 

@@ -2,12 +2,10 @@
 #include "field.h"
 
 namespace rdf {
-
 namespace types {
 
 template<type T> struct traits_base
 {
-  using type = bool;
   static constexpr types::type const etype = T;
   static constexpr size_t const      size  = k_type_props[T].size_;
   static constexpr size_t const      align = k_type_props[T].alignment_;
@@ -16,11 +14,14 @@ template<type T> struct traits_base
 
 template <type T> struct traits {};
 
-template<> struct traits<Key8>       : traits_base<Key8>       { using type = uint8_t;  using size_prefix_t = uint8_t; };
-template<> struct traits<Key16>      : traits_base<Key16>      { using type = uint16_t; using prefix_t = uint16_t; };
-template<> struct traits<String8>    : traits_base<String8>    { using type = uint8_t;  using size_prefix_t = uint8_t; };
-template<> struct traits<String16>   : traits_base<String16>   { using type = uint16_t; using prefix_t = uint16_t; };
-template<> struct traits<Timestamp>  : traits_base<Timestamp>  { using type = raw_time_t; };
+// Reminder.
+static_assert(type_numof == 21, "ensure type traits are updated when new types are added");
+
+template<> struct traits<Key8>       : traits_base<Key8>       { using type = string_t; using prefix_t = uint8_t; };
+template<> struct traits<Key16>      : traits_base<Key16>      { using type = string_t; using prefix_t = uint16_t; };
+template<> struct traits<String8>    : traits_base<String8>    { using type = string_t; using prefix_t = uint8_t; };
+template<> struct traits<String16>   : traits_base<String16>   { using type = string_t; using prefix_t = uint16_t; };
+template<> struct traits<Timestamp>  : traits_base<Timestamp>  { using type = timestamp_t; };
 template<> struct traits<Char>       : traits_base<Char>       { using type = char; };
 template<> struct traits<Utf_Char16> : traits_base<Utf_Char16> { using type = char16_t; };
 template<> struct traits<Utf_Char32> : traits_base<Utf_Char32> { using type = char32_t; };
@@ -38,13 +39,5 @@ template<> struct traits<Float64>    : traits_base<Float64>    { using type = st
 template<> struct traits<Float128>   : traits_base<Float128>   { using type = std::float128_t; };
 template<> struct traits<Bool>       : traits_base<Bool>       { using type = bool; };
 
-static_assert(traits<Uint64>::etype == Uint64);
-static_assert(traits<Uint64>::size == sizeof(uint64_t));
-static_assert(strcmp(traits<Uint64>::name, "u64") == 0);
-static_assert(std::is_same_v<traits<Uint64>::type, uint64_t>);
-
-static_assert(std::is_same_v<traits<String16>::prefix_t, uint16_t>);
-
 } // namespace types
-
 } // namespace rdf

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "type_traits.h"
 
 #include <fmt/compile.h>
 #include <boost/assert.hpp>
@@ -9,6 +10,8 @@
 
 #include <string>
 #include <vector>
+
+using namespace rdf::types;
 
 namespace rdf {
 
@@ -54,15 +57,13 @@ struct field
   auto offset() const { return offset_; }
   auto index() const { return index_; }
 
-  template <types::type T, concepts::field_value V>
-            void write(mem_t* base, V const value) const;
-
-  template <types::type T, concepts::field_value V>
-         V const read(mem_t const* base) const;
+  template <type T> void write(mem_t* base, traits<T>::type const value) const;
+  template <type T> traits<T>::type const read(mem_t const* base) const;
 
 private:
-  template<concepts::string_prefix P> void           write_str(mem_t* base, string_t const value) const;
-  template<concepts::string_prefix P> string_t const read_str(mem_t const* base) const;
+
+  template<type T> void                  write_str(mem_t* base, traits<T>::type value) const;
+  template<type T> traits<T>::type const read_str(mem_t const* base) const;
 
   template<typename T>  T const* offset_ptr(mem_t const* base) const;
   template<typename T>  T*       offset_ptr(mem_t* base) const;

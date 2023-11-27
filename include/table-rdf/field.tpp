@@ -31,10 +31,12 @@ T* field::offset_ptr(mem_t* base) const
 }
 
 // TODO: Separate write_str functions at the top level, with optional param to pass in the length to avoid length calculation on the fly.
-template <types::type T, concepts::field_value V>
-void field::write(mem_t* base, V const value) const
+template <type T>
+void field::write(mem_t* base, traits<T>::type const value) const
 {
+  using V = traits<T>::type;
   DBG_VALIDATE_FIELD(T, V);
+
   if constexpr(concepts::numeric<V>)
   {
     *offset_ptr<V>(base) = value;
@@ -42,33 +44,43 @@ void field::write(mem_t* base, V const value) const
   else if constexpr(concepts::string<V>)
   {
     if constexpr (is_string8_type(T)) {
-      write_str<uint8_t>(base, value);
+      write_str<T>(base, value);
     }
     else if constexpr (is_string16_type(T)) {
-      write_str<uint16_t>(base, value);
+      write_str<T>(base, value);
     }
     static_assert(is_string_type(T));
+  }
+  else if constexpr(std::is_same_v<V, timestamp_t>)
+  {
+    *offset_ptr<raw_time_t>(base) = value.time_since_epoch().count();
   }
   else {
     static_assert(util::always_false_v<V>, "unsupported field value type");
   }
 }
 
-template <types::type T, concepts::field_value V>
-V const field::read(mem_t const* base) const
+template <type T>
+traits<T>::type const field::read(mem_t const* base) const
 {
+  using V = traits<T>::type;
   DBG_VALIDATE_FIELD(T, V);
+
   if constexpr (concepts::numeric<V>) {
     return *offset_ptr<V>(base);
   }
   else if constexpr (concepts::string<V>) {
     if constexpr (is_string8_type(T)) {
-      return read_str<uint8_t>(base);
+      return read_str<T>(base);
     }
     else if constexpr (is_string16_type(T)) {
-      return read_str<uint16_t>(base);
+      return read_str<T>(base);
     }
     static_assert(is_string_type(T));
+  }
+  else if constexpr(std::is_same_v<V, timestamp_t>)
+  {
+    return timestamp_t{ timestamp_t::duration{ *offset_ptr<raw_time_t>(base) } };
   }
   else {
     static_assert(util::always_false_v<V>, "unsupported field value type");
@@ -76,10 +88,11 @@ V const field::read(mem_t const* base) const
 }
 
 
-template<concepts::string_prefix P>
-void field::write_str(mem_t* base, string_t const value) const
+template<type T>
+void field::write_str(mem_t* base, traits<T>::type value) const
 {
-  using char_type = string_t::value_type;
+  using char_type = traits<T>::type::value_type;
+  using prefix_t = traits<T>::prefix_t;
 
   // TODO: Size-prefix is number of *bytes*. But this means we need to convert to number of *chars*
   // in read_str. Should we enforce sizeof(char_type) == 1 to save the multiply and divide?
@@ -88,23 +101,24 @@ void field::write_str(mem_t* base, string_t const value) const
   if (size > payload()) {
     throw std::runtime_error("string too large for payload");   // TODO: Change to assert for speed?
   }
-  else if (size != (P)size) {
-    throw std::runtime_error(fmt::format("strings of type {} must fit in {}-bits", enum_names_type(type_), sizeof(P) * 8));
+  else if (size != (prefix_t)size) {
+    throw std::runtime_error(fmt::format("strings of type {} must fit in {}-bits", enum_names_type(type_), sizeof(prefix_t) * 8));
   }
 
   auto length_mem = offset_ptr<mem_t>(base);
-  *reinterpret_cast<P*>(length_mem) = (P)size;   // Write length prefix.
+  *reinterpret_cast<prefix_t*>(length_mem) = (prefix_t)size;   // Write length prefix.
   
-  auto const char_mem = offset_ptr<char_type>(base + sizeof(P));
+  auto const char_mem = offset_ptr<char_type>(base + sizeof(prefix_t));
   std::memcpy(char_mem, value.data(), size);     // Write string.
 }
 
-template<concepts::string_prefix P>
-string_t const field::read_str(mem_t const* base) const
+template<type T>
+traits<T>::type const field::read_str(mem_t const* base) const
 {
-  using char_type = string_t::value_type;
-  auto const length = *offset_ptr<P const>(base) / sizeof(char_type);
-  auto const chars = offset_ptr<string_t::value_type const>(base + sizeof(P));
+  using char_type = traits<T>::type::value_type;
+  using prefix_t = traits<T>::prefix_t;
+  auto const length = *offset_ptr<prefix_t const>(base) / sizeof(char_type);
+  auto const chars = offset_ptr<char_type const>(base + sizeof(prefix_t));
   return { chars, length };
 }
 
