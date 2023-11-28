@@ -1,7 +1,6 @@
 #pragma once
 #include "common.h"
 #include "types.h"
-#include "concepts.h"
 
 namespace rdf {
 
