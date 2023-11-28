@@ -29,6 +29,9 @@ namespace rdf
     #define CHRONO_PARSE_NAMESPACE date
   #endif
 
+  // Default format for displaying timestamps.
+  static constexpr char const* k_time_to_str_fmt_ = "{:%Y%m%d %T}";
+
   // TODO: Current system uses this "key plus" structure that includes both a symbol key and sec ID.
   // struct key_plus_t {
   //   string_t symbol;
