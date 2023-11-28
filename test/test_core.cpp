@@ -3,12 +3,13 @@
 #include <table-rdf/traits.h>
 
 #include <catch2/catch.hpp>
-
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 #if !TRDF_HAS_CHRONO_PARSE
   #include <date/date.h>
 #endif
-
 #include <ranges>
+#include <fstream>
 
 namespace rdf {
 
@@ -223,6 +224,29 @@ TEST_CASE( "record <-> binary file", "[core]" )
 {
   using field = rdf::field;
   using namespace types;
+  namespace ipc = boost::interprocess;
+
+  char const* file_name  = "./test.bin";
+  std::size_t const file_size = 10000;
+
+  ipc::file_mapping::remove(file_name);
+  {  
+    std::ofstream file{file_name, std::ios_base::binary};
+    file.seekp(file_size-1, std::ios_base::beg); // Set the file size.
+    file.put(0);
+  }
+
+  // Create a file mapping.
+  ipc::file_mapping m_file(file_name, ipc::read_write);
+  // Map the whole file with read-write permissions in this process.
+  ipc::mapped_region region(m_file, ipc::read_write);
+  // Get the address of the mapped region.
+  void* addr = region.get_address();
+  std::size_t size = region.get_size();
+
+  // Write all the memory to 1
+  std::memset(addr, 1, size);
+  region.flush();
 
   // Test a descriptor with all supported types.
   rdf::fields_builder builder;
