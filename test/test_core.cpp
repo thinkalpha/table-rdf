@@ -1,6 +1,6 @@
 #include "log.h"
 #include <table-rdf/rdf.h>
-#include <table-rdf/type_traits.h>
+#include <table-rdf/traits.h>
 
 #include <catch2/catch.hpp>
 
@@ -51,7 +51,7 @@ TEST_CASE( "fields_builder", "[core]" )
          .push({ "field 7",   "field 7 description", Bool })
          .push({ "field 8",   "field 8 description", Int32 });
 
-  rdf::descriptor d {"XYZ Descriptor", "%Y%m%d %T", builder};
+  rdf::descriptor d {"XYZ Descriptor", builder};
   SPDLOG_DEBUG(d.describe());
 }
 
@@ -60,33 +60,37 @@ TEST_CASE( "basic usage", "[core]" )
   using field = rdf::field;
   using namespace types;
 
+  // Test a descriptor with all supported types.
   rdf::fields_builder builder;
-  builder.push({ "Formula",          "Formula description",          String8, 31})
-         .push({ "Symbol",           "Ticker Symbol",                Key8, 31})
-         .push({ "Timestamp",        "UTC Timestamp",                Timestamp, field::k_no_payload, fmt::runtime("{:>40}") })
-         .push({ "BarSequence",      "BarSequence description",      Int32 })
-         .push({ "BarOpen",          "BarOpen description",          Float32 })
-         .push({ "BarHigh",          "BarHigh description",          Float32 })
-         .push({ "BarLow",           "BarLow description",           Float32 })
-         .push({ "BarClose",         "BarClose description",         Float32 })
-         .push({ "BarVolume",        "BarVolume description",        Float32 })
-         .push({ "BarVWAPVolume",    "BarVWAPVolume description",    Int32 })
-         .push({ "BarVWAPNotional",  "BarVWAPNotional description",  Int64 })
-         .push({ "BarNotional",      "BarNotional description",      Int64 })
-         .push({ "BarLastBid",       "BarLastBid description",       Float32 })
-         .push({ "BarLastBidSize",   "BarLastBidSize description",   Int32 })
-         .push({ "BarLastAsk",       "BarLastAsk description",       Float32 })
-         .push({ "BarLastAskSize",   "BarLastAskSize description",   Int32 })
-         .push({ "BarLastVolume",    "BarLastVolume description",    Int32 })
-         .push({ "BarTotalVolume",   "BarTotalVolume description",   Int32 })
-         .push({ "BarTradeCount",    "BarTradeCount description",    Int32 });
+  builder.push({ "Key8 Field",       "Key8 field description",       Key8, 31})
+         .push({ "Key16 Field",      "Key16 field description",      Key16, 254 })
+         .push({ "String8 Field",    "String8 field description",    String8, 31 })
+         .push({ "String16 Field",   "String16 field description",   String16, 254 })
+         .push({ "Timestamp Field",  "Timestamp field description",  Timestamp, field::k_no_payload, fmt::runtime("{:>40}") })
+         .push({ "Char Field",       "Char field description",       Char })
+         .push({ "Utf_Char8 Field",  "Utf_Char8 field description",  Utf_Char8 })
+         .push({ "Utf_Char16 Field", "Utf_Char16 field description", Utf_Char16 })
+         .push({ "Utf_Char32 Field", "Utf_Char32 field description", Utf_Char32 })
+         .push({ "Int8 Field",       "Int8 field description",       Int8 })
+         .push({ "Int16 Field",      "Int16 field description",      Int16 })
+         .push({ "Int32 Field",      "Int32 field description",      Int32 })
+         .push({ "Int64 Field",      "Int64 field description",      Int64 })
+         .push({ "Uint8 Field",      "Uint8 field description",      Uint8 })
+         .push({ "Uint16 Field",     "Uint16 field description",     Uint16 })
+         .push({ "Uint32 Field",     "Uint32 field description",     Uint32 })
+         .push({ "Uint64 Field",     "Uint64 field description",     Uint64 })
+         .push({ "Float16 Field",    "Float16 field description",    Float16 })
+         .push({ "Float32 Field",    "Float32 field description",    Float32 })
+         .push({ "Float64 Field",    "Float64 field description",    Float64 })
+         .push({ "Float128 Field",   "Float128 field description",   Float128 })
+         .push({ "Bool Field",       "Bool field description",       Bool });
 
-  rdf::descriptor d {"BarRecord 1m Descriptor", "%Y%m%d %T", builder};
-  // SPDLOG_DEBUG(d.describe());
+
+  rdf::descriptor d {"BarRecord 1m Descriptor", builder};
 
   constexpr auto k_count = 100;
 
-  SECTION( "record write")
+  SECTION("record write")
   {
     mem_t* const mem_alloc = (mem_t*)std::aligned_alloc(field::k_record_alignment, d.mem_size() * k_count);
     REQUIRE(boost::alignment::is_aligned(field::k_record_alignment, mem_alloc));
@@ -100,26 +104,30 @@ TEST_CASE( "basic usage", "[core]" )
     for (int i = 0; i < k_count; ++i)
     {
       auto const t = time + timestamp_t::duration{i};
+      auto const ui = (uint64_t)i;
 
-      d.fields("Formula")        .write<String8>  (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
-      d.fields("Symbol")         .write<Key8>     (mem, fmt::format("AAPL_{}:*", i % 10));
-      d.fields("Timestamp")      .write<Timestamp>(mem, t);
-      d.fields("BarSequence")    .write<Int32>    (mem, i);
-      d.fields("BarOpen")        .write<Float32>  (mem, i * 1.f);
-      d.fields("BarHigh")        .write<Float32>  (mem, i * 10.f);
-      d.fields("BarLow")         .write<Float32>  (mem, i * 100.f);
-      d.fields("BarClose")       .write<Float32>  (mem, i * 1000.f);
-      d.fields("BarVolume")      .write<Float32>  (mem, i * 10000.f);
-      d.fields("BarVWAPVolume")  .write<Int32>    (mem, i << 1);
-      d.fields("BarVWAPNotional").write<Int64>    (mem, int64_t(i << 2));
-      d.fields("BarNotional")    .write<Int64>    (mem, int64_t(i << 3));
-      d.fields("BarLastBid")     .write<Float32>  (mem, i * 100000.f);
-      d.fields("BarLastBidSize") .write<Int32>    (mem, i << 4);
-      d.fields("BarLastAsk")     .write<Float32>  (mem, i * 1000000.f);
-      d.fields("BarLastAskSize") .write<Int32>    (mem, i << 5);
-      d.fields("BarLastVolume")  .write<Int32>    (mem, i << 6);
-      d.fields("BarTotalVolume") .write<Int32>    (mem, i << 7);
-      d.fields("BarTradeCount")  .write<Int32>    (mem, i << 8);
+      d.fields("Key8 Field")      .write<Key8>      (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
+      d.fields("Key16 Field")     .write<Key16>     (mem, fmt::format("AAPL_{}:*", i % 10));
+      d.fields("String8 Field")   .write<String8>   (mem, fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
+      d.fields("String16 Field")  .write<String16>  (mem, fmt::format("SPY_{}:*", i % 10));
+      d.fields("Timestamp Field") .write<Timestamp> (mem, t);
+      d.fields("Char Field")      .write<Char>      (mem, 33 + i % (127 - 33));
+      d.fields("Utf_Char8 Field") .write<Utf_Char8> (mem, ui % 256);
+      d.fields("Utf_Char16 Field").write<Utf_Char16>(mem, ui % 512);
+      d.fields("Utf_Char32 Field").write<Utf_Char32>(mem, ui % 1024);
+      d.fields("Int8 Field")      .write<Int8>      (mem, -i << 0);
+      d.fields("Int16 Field")     .write<Int16>     (mem, -i << 1);
+      d.fields("Int32 Field")     .write<Int32>     (mem, -i << 2);
+      d.fields("Int64 Field")     .write<Int64>     (mem, -i << 3);
+      d.fields("Uint8 Field")     .write<Uint8>     (mem, i << 0);
+      d.fields("Uint16 Field")    .write<Uint16>    (mem, i << 1);
+      d.fields("Uint32 Field")    .write<Uint32>    (mem, i << 2);
+      d.fields("Uint64 Field")    .write<Uint64>    (mem, i << 3);
+      d.fields("Float16 Field")   .write<Float16>   (mem, i * 1.f16);
+      d.fields("Float32 Field")   .write<Float32>   (mem, i * 10.f32);
+      d.fields("Float64 Field")   .write<Float64>   (mem, i * 100.f64);
+      d.fields("Float128 Field")  .write<Float128>  (mem, i * 1000.f128);
+      d.fields("Bool Field")      .write<Bool>      (mem, i % 2);
 
       mem += d.mem_size();
     }
@@ -130,29 +138,32 @@ TEST_CASE( "basic usage", "[core]" )
       for (int i = 0; i < k_count; ++i)
       {
         auto record = rdf::record{mem};
-        REQUIRE(record.get<Int32>(fields[3]) == i);
 
         auto const t = time + timestamp_t::duration{i};
+        auto const ui = (uint64_t)i;
 
-        REQUIRE(record.get<String8>  (d.fields("Formula"))          == fmt::format("_B[_{}d:{}d]", i, i + 1));
-        REQUIRE(record.get<Key8>     (d.fields("Symbol"))           == fmt::format("AAPL_{}:*", i % 10));
-        REQUIRE(record.get<Timestamp>(d.fields("Timestamp"))        == t);
-        REQUIRE(record.get<Int32>    (d.fields("BarSequence"))      == i);
-        REQUIRE(record.get<Float32>  (d.fields("BarOpen"))          == i * 1.f);
-        REQUIRE(record.get<Float32>  (d.fields("BarHigh"))          == i * 10.f);
-        REQUIRE(record.get<Float32>  (d.fields("BarLow"))           == i * 100.f);
-        REQUIRE(record.get<Float32>  (d.fields("BarClose"))         == i * 1000.f);
-        REQUIRE(record.get<Float32>  (d.fields("BarVolume"))        == i * 10000.f);
-        REQUIRE(record.get<Int32>    (d.fields("BarVWAPVolume"))    == i << 1);
-        REQUIRE(record.get<Int64>    (d.fields("BarVWAPNotional"))  == i << 2);
-        REQUIRE(record.get<Int64>    (d.fields("BarNotional"))      == i << 3);
-        REQUIRE(record.get<Float32>  (d.fields("BarLastBid"))       == i * 100000.f);
-        REQUIRE(record.get<Int32>    (d.fields("BarLastBidSize"))   == i << 4);
-        REQUIRE(record.get<Float32>  (d.fields("BarLastAsk"))       == i * 1000000.f);
-        REQUIRE(record.get<Int32>    (d.fields("BarLastAskSize"))   == i << 5);
-        REQUIRE(record.get<Int32>    (d.fields("BarLastVolume"))    == i << 6);
-        REQUIRE(record.get<Int32>    (d.fields("BarTotalVolume"))   == i << 7);
-        REQUIRE(record.get<Int32>    (d.fields("BarTradeCount"))    == i << 8);
+        REQUIRE(record.get<Key8>      (d.fields("Key8 Field"))       == fmt::format("_B[_{}d:{}d]", i, i + 1));
+        REQUIRE(record.get<Key16>     (d.fields("Key16 Field"))      == fmt::format("AAPL_{}:*", i % 10));
+        REQUIRE(record.get<String8>   (d.fields("String8 Field"))    == fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
+        REQUIRE(record.get<String16>  (d.fields("String16 Field"))   == fmt::format("SPY_{}:*", i % 10));
+        REQUIRE(record.get<Timestamp> (d.fields("Timestamp Field"))  == t);
+        REQUIRE(record.get<Char>      (d.fields("Char Field"))       == 33 + i % (127 - 33));
+        REQUIRE(record.get<Utf_Char8> (d.fields("Utf_Char8 Field"))  == ui % 256);
+        REQUIRE(record.get<Utf_Char16>(d.fields("Utf_Char16 Field")) == ui % 512);
+        REQUIRE(record.get<Utf_Char32>(d.fields("Utf_Char32 Field")) == ui % 1024);
+        REQUIRE(record.get<Int8>      (d.fields("Int8 Field"))       == -i << 0);
+        REQUIRE(record.get<Int16>     (d.fields("Int16 Field"))      == -i << 1);
+        REQUIRE(record.get<Int32>     (d.fields("Int32 Field"))      == -i << 2);
+        REQUIRE(record.get<Int64>     (d.fields("Int64 Field"))      == -i << 3);
+        REQUIRE(record.get<Uint8>     (d.fields("Uint8 Field"))      == ui << 0);
+        REQUIRE(record.get<Uint16>    (d.fields("Uint16 Field"))     == ui << 1);
+        REQUIRE(record.get<Uint32>    (d.fields("Uint32 Field"))     == ui << 2);
+        REQUIRE(record.get<Uint64>    (d.fields("Uint64 Field"))     == ui << 3);
+        REQUIRE(record.get<Float16>   (d.fields("Float16 Field"))    == i * 1.f16);
+        REQUIRE(record.get<Float32>   (d.fields("Float32 Field"))    == i * 10.f32);
+        REQUIRE(record.get<Float64>   (d.fields("Float64 Field"))    == i * 100.f64);
+        REQUIRE(record.get<Float128>  (d.fields("Float128 Field"))   == i * 1000.f128);
+        REQUIRE(record.get<Bool>      (d.fields("Bool Field"))       == i % 2);
 
         mem += d.mem_size();
       }
@@ -178,17 +189,14 @@ TEST_CASE( "basic usage", "[core]" )
 
 TEST_CASE( "timestamp", "[core]" )
 {
-  constexpr auto parse_format = "%Y%m%d %T";
-  constexpr auto str_format = "{:%Y%m%d %T}";
-  
   SECTION( "raw symetry" ) 
   {
     std::string input = "20170915 13:11:34.356648000";
     std::istringstream in{input};
     timestamp_t tp;
-    in >> CHRONO_PARSE_NAMESPACE::parse(parse_format, tp);
+    in >> CHRONO_PARSE_NAMESPACE::parse("%Y%m%d %T", tp);
     REQUIRE(!in.fail());
-    auto output = std::format(str_format, tp);
+    auto output = std::format("{:%Y%m%d %T}", tp);
     REQUIRE(input == output);
   }
 
@@ -196,24 +204,19 @@ TEST_CASE( "timestamp", "[core]" )
 
   SECTION( "util symetry" )
   {
-    auto now_str = rdf::util::time_to_str(now, str_format);
-    auto now_parsed = rdf::util::str_to_time(now_str, parse_format);
+    auto now_str = rdf::util::time_to_str(now, "{:%Y%m%d %T}");
+    auto now_parsed = rdf::util::str_to_time(now_str, "%Y%m%d %T");
     REQUIRE(now == now_parsed);
   }
 
-  SECTION( "rdf::descriptor symetry" )
+  SECTION( "helper symetry" )
   {
-    rdf::fields_builder b;
-    b.push({ "symbol",    "", types::Key8, 31 })
-     .push({ "timestamp", "", types::Timestamp });
-    rdf::descriptor d {"Test Data Descriptor", "%Y%m%d %T",  b};
-    auto now_str = d.time_to_str(now);
-    auto now_parsed = d.str_to_time(now_str);
+    util::time_fmt tf{"%Y%m%d %T"};    
+    auto now_str = tf.to_str(now);
+    auto now_parsed = tf.to_time(now_str);
     REQUIRE(now == now_parsed);
-
-    // mem_t* m;
-    // auto blah = field_t<types::Key8>::read(m, d.fields("asdsad"));
   }
+
 }
 
 } // namespace rdf

@@ -3,19 +3,11 @@
 #include <cstdint>
 #include <stdfloat>
 #include <array>
+#include <bit>
 
 namespace rdf {
-namespace concepts {
-  template <typename T> concept string_prefix = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t>;
-  
-  // TODO: Elaborate numeric so that it is precisely the primitive types that we map to in types::k_type_props.
-  template <typename T> concept numeric = std::is_floating_point_v<T> || std::is_integral_v<T>;
-  template <typename T> concept string = std::is_convertible_v<T, string_t>;
-  template <typename T> concept field_value = numeric<T> || string<T>;
-}
 namespace types {
 
-// TODO: Consider using type traits.
 enum type
 {
   Key8 = 0,   // Key string with 8-bit size prefix.
@@ -24,6 +16,7 @@ enum type
   String16,   // String with 16-bit size prefix.
   Timestamp,
   Char,
+  Utf_Char8,
   Utf_Char16,
   Utf_Char32,
   Int8,
@@ -54,12 +47,13 @@ struct type_props {
 #endif
 
 static constexpr std::array<type_props, type_numof> k_type_props {
-  type_props{ Key8,       "*key8*",  sizeof(uint8_t),              alignof(uint8_t) },
-  type_props{ Key16,      "*key16*", sizeof(uint16_t),             alignof(uint16_t) },
+  type_props{ Key8,       "*key8*",  sizeof(uint8_t),              alignof(uint8_t) },      // String types are aligned to their prefix type
+  type_props{ Key16,      "*key16*", sizeof(uint16_t),             alignof(uint16_t) },     // and their payload is aligned to the string char type.
   type_props{ String8,    "str8",    sizeof(uint8_t),              alignof(uint8_t) },
   type_props{ String16,   "str16",   sizeof(uint16_t),             alignof(uint16_t) },
   type_props{ Timestamp,  "tstamp",  sizeof(raw_time_t),           alignof(raw_time_t) },
   type_props{ Char,       "char",    sizeof(char),                 alignof(char) },
+  type_props{ Utf_Char8,  "utf-c8",  sizeof(char8_t),              alignof(char8_t) },
   type_props{ Utf_Char16, "utf-c16", sizeof(char16_t),             alignof(char16_t) },
   type_props{ Utf_Char32, "utf-c32", sizeof(char32_t),             alignof(char32_t) },
   type_props{ Int8,       "i8",      sizeof(int8_t),               alignof(int8_t) },
@@ -81,20 +75,8 @@ static inline char const* enum_names_type(type t) {
   return k_type_props[t].name_;
 }
 
-inline constexpr bool is_string8_type(type t) {
-  return t == String8 || t == Key8;
-}
-
-inline constexpr bool is_string16_type(type t) {
-  return t == String16 || t == Key16;
-}
-
-inline constexpr bool is_string_type(type t) {
-  return is_string8_type(t) || is_string16_type(t);
-}
-
 static inline constexpr bool check_types() {
-  for (size_t i = 0; i < k_type_props.size(); ++i) { 
+  for (size_t i = 0; i < k_type_props.size(); ++i) {
     if (k_type_props[i].type_ != i)
     {
       return false;

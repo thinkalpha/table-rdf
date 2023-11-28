@@ -20,7 +20,7 @@ public:
   ~record() = default;
 
   template <types::type T>
-  inline traits<T>::type const get(const field& f) const
+  inline value_t<T> const get(const field& f) const
   {
     return f.read<T>(memory());
   }
@@ -59,10 +59,14 @@ inline std::string record::to_string(descriptor const& desc) const
       FMT_FIELD(String8);
       FMT_FIELD(String16);
       case Timestamp: {
-        out_it = fmt::format_to(out_it, f.fmt_, util::time_to_str(get<Timestamp>(f), desc.time_format()));
+        out_it = fmt::format_to(out_it, f.fmt_, util::time_to_str(get<Timestamp>(f)));
         break;
       }
       FMT_FIELD(Char);
+      case Utf_Char8: {
+        out_it = fmt::format_to(out_it, f.fmt_, (uint64_t)get<Utf_Char8>(f));  // TODO: Fix this temporary hack.
+        break;
+      }
       case Utf_Char16: {
         out_it = fmt::format_to(out_it, f.fmt_, (uint64_t)get<Utf_Char16>(f));  // TODO: Fix this temporary hack.
         break;

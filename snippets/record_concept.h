@@ -5,7 +5,7 @@ using offset_t = size_t;
 using name_t = char const*;
 using description_t = char const*;
 
-template <typename T> concept DataStreamRecord = requires(T r, name_t name, offset_t offset) {
+template<class T> concept DataStreamRecord = requires(T r, name_t name, offset_t offset) {
   { r.get_bool(name) } -> std::same_as<bool>;
   { r.get_bool(offset) } -> std::same_as<bool>;
 };
@@ -38,7 +38,7 @@ public:
     void subscribe();
     temporal_status temporal_status();
 
-    // typename std::vector<record const*>::const_iterator begin_{}, end_{};
+    // class std::vector<record const*>::const_iterator begin_{}, end_{};
     std::vector<RecordType const*> records_;
 
 };

@@ -17,20 +17,20 @@ enum class types::type
 
 namespace rdf {
 
-template <class T> struct type_trait
+template<class T> struct type_trait
 {
   using concrete_type = T;
   static types::type const type;
 	static char const* name;
 };
 
-template <> char const* type_trait<double>::name = "double";
-template <> types::type const type_trait<double>::type = types::type::float64_type;
+template<> char const* type_trait<double>::name = "double";
+template<> types::type const type_trait<double>::type = types::type::float64_type;
 
 static_assert(std::is_same_v<type_trait<double>::concrete_type, double>);
 
 struct type_handler {
-    template <class Type>
+    template<class Type>
     static type_handler create() {
         type_handler ci;
         return ci;
@@ -39,10 +39,10 @@ struct type_handler {
 
 typedef std::map<char const*, type_handler> type_handler_map;
 
-template <typename... Args>
+template <class... Args>
 struct types_builder;
 
-template <class Type, typename... Args>
+template <class Type, class... Args>
 struct types_builder<Type, Args...>
 {
 	static void build_map(type_handler_map& map) {
@@ -135,10 +135,10 @@ static type_handler_map k_type_handlers = all_types::get_type_handler_map();
 
 // using converters = std::array<reader_writer, field::type_numof>;
 
-// template <typename... Args>
+// template <class... Args>
 // struct ConverterBuilder;
 
-// template <field::type T, typename... Args>
+// template <field::type T, class... Args>
 // struct ConverterBuilder<T, Args...> 
 // {
 // 	static void buildMap(type_traits& array) {
@@ -181,7 +181,7 @@ static type_handler_map k_type_handlers = all_types::get_type_handler_map();
 //   static constexpr field::type_props const desc = field::k_type_props[T];
 // };
 
-// template <field::type T, typename SizePrefix> struct string_traits : type<T>
+// template <field::type T, class SizePrefix> struct string_traits : type<T>
 // {
 //   using size_prefix_t = SizePrefix;
 // };
