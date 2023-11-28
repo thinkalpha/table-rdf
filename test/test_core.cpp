@@ -86,7 +86,7 @@ TEST_CASE( "basic usage", "[core]" )
          .push({ "Bool Field",       "Bool field description",       Bool });
 
 
-  rdf::descriptor d {"BarRecord 1m Descriptor", builder};
+  descriptor d {"All Fields Test Descriptor", builder};
 
   constexpr auto k_count = 100;
 
@@ -217,6 +217,89 @@ TEST_CASE( "timestamp", "[core]" )
     REQUIRE(now == now_parsed);
   }
 
+}
+
+TEST_CASE( "record <-> binary file", "[core]" )
+{
+  using field = rdf::field;
+  using namespace types;
+
+  // Test a descriptor with all supported types.
+  rdf::fields_builder builder;
+  builder.push({ "Key8 Field",       "Key8 field description",       Key8, 31})
+         .push({ "Key16 Field",      "Key16 field description",      Key16, 254 })
+         .push({ "String8 Field",    "String8 field description",    String8, 31 })
+         .push({ "String16 Field",   "String16 field description",   String16, 254 })
+         .push({ "Timestamp Field",  "Timestamp field description",  Timestamp, field::k_no_payload, fmt::runtime("{:>40}") })
+         .push({ "Char Field",       "Char field description",       Char })
+         .push({ "Utf_Char8 Field",  "Utf_Char8 field description",  Utf_Char8 })
+         .push({ "Utf_Char16 Field", "Utf_Char16 field description", Utf_Char16 })
+         .push({ "Utf_Char32 Field", "Utf_Char32 field description", Utf_Char32 })
+         .push({ "Int8 Field",       "Int8 field description",       Int8 })
+         .push({ "Int16 Field",      "Int16 field description",      Int16 })
+         .push({ "Int32 Field",      "Int32 field description",      Int32 })
+         .push({ "Int64 Field",      "Int64 field description",      Int64 })
+         .push({ "Uint8 Field",      "Uint8 field description",      Uint8 })
+         .push({ "Uint16 Field",     "Uint16 field description",     Uint16 })
+         .push({ "Uint32 Field",     "Uint32 field description",     Uint32 })
+         .push({ "Uint64 Field",     "Uint64 field description",     Uint64 })
+         .push({ "Float16 Field",    "Float16 field description",    Float16 })
+         .push({ "Float32 Field",    "Float32 field description",    Float32 })
+         .push({ "Float64 Field",    "Float64 field description",    Float64 })
+         .push({ "Float128 Field",   "Float128 field description",   Float128 })
+         .push({ "Bool Field",       "Bool field description",       Bool });
+
+
+  descriptor d {"All Fields Test Descriptor", builder};
+
+  constexpr auto k_count = 100;
+
+  SECTION("record write")
+  {
+    mem_t* const mem_alloc = (mem_t*)std::aligned_alloc(field::k_record_alignment, d.mem_size() * k_count);
+    REQUIRE(boost::alignment::is_aligned(field::k_record_alignment, mem_alloc));
+    auto mem = mem_alloc;
+
+    timestamp_t const time = timestamp_t::clock::now();
+
+    auto fields = d.fields();
+    
+    // Write to record memory.
+    for (int i = 0; i < k_count; ++i)
+    {
+      auto const t = time + timestamp_t::duration{i};
+      auto const ui = (uint64_t)i;
+
+      d.fields("Key8 Field")      .write<Key8>      (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
+      d.fields("Key16 Field")     .write<Key16>     (mem, fmt::format("AAPL_{}:*", i % 10));
+      d.fields("String8 Field")   .write<String8>   (mem, fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
+      d.fields("String16 Field")  .write<String16>  (mem, fmt::format("SPY_{}:*", i % 10));
+      d.fields("Timestamp Field") .write<Timestamp> (mem, t);
+      d.fields("Char Field")      .write<Char>      (mem, 33 + i % (127 - 33));
+      d.fields("Utf_Char8 Field") .write<Utf_Char8> (mem, ui % 256);
+      d.fields("Utf_Char16 Field").write<Utf_Char16>(mem, ui % 512);
+      d.fields("Utf_Char32 Field").write<Utf_Char32>(mem, ui % 1024);
+      d.fields("Int8 Field")      .write<Int8>      (mem, -i << 0);
+      d.fields("Int16 Field")     .write<Int16>     (mem, -i << 1);
+      d.fields("Int32 Field")     .write<Int32>     (mem, -i << 2);
+      d.fields("Int64 Field")     .write<Int64>     (mem, -i << 3);
+      d.fields("Uint8 Field")     .write<Uint8>     (mem, i << 0);
+      d.fields("Uint16 Field")    .write<Uint16>    (mem, i << 1);
+      d.fields("Uint32 Field")    .write<Uint32>    (mem, i << 2);
+      d.fields("Uint64 Field")    .write<Uint64>    (mem, i << 3);
+      d.fields("Float16 Field")   .write<Float16>   (mem, i * 1.f16);
+      d.fields("Float32 Field")   .write<Float32>   (mem, i * 10.f32);
+      d.fields("Float64 Field")   .write<Float64>   (mem, i * 100.f64);
+      d.fields("Float128 Field")  .write<Float128>  (mem, i * 1000.f128);
+      d.fields("Bool Field")      .write<Bool>      (mem, i % 2);
+
+      mem += d.mem_size();
+    }
+
+    
+
+    free(mem_alloc);
+  }
 }
 
 } // namespace rdf
