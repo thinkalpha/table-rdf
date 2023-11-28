@@ -255,7 +255,7 @@ TEST_CASE( "record <-> binary file", "[core]" )
   descriptor d {"All Fields Test Descriptor", builder};
 
   // Set up memory mapped file.
-  char const* file_name  = "./test.bin";
+  char const* file_name  = "./record-rw-test.bin";
   
   constexpr auto k_desired_file_size = 1024 * 1024 * 1024; // 1 GB.
   auto const record_count = k_desired_file_size / d.mem_size();

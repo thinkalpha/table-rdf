@@ -74,16 +74,56 @@
     {
       "name": "linux-debug",
       "inherits": "linux-base",
-      "displayName": "linux-debug",
       "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
+      "name": "linux-relwithdeb",
+      "inherits": "linux-base",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "linux-release",
+      "inherits": "linux-base",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "linux-debug-mozart",
       "inherits": "linux-debug",
-      "displayName": "linux-debug-mozart",
+      "description": "For building on Mozart.",
+      "environment": {
+        "CXX": "/opt/gcc/gcc-13.2/bin/g++",
+        "VCPKG_ROOT": "~/Dev/table-ws-ng/submodules/vcpkg"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/opt/gcc/gcc-13.2/bin/g++",
+        "CMAKE_CXX_COMPILER": "/opt/gcc/gcc-13.2/bin/g++"
+      }
+    },
+    {
+      "name": "linux-relwithdeb-mozart",
+      "inherits": "linux-relwithdeb",
+      "description": "For building on Mozart.",
+      "environment": {
+        "CXX": "/opt/gcc/gcc-13.2/bin/g++",
+        "VCPKG_ROOT": "~/Dev/table-ws-ng/submodules/vcpkg"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/opt/gcc/gcc-13.2/bin/g++",
+        "CMAKE_CXX_COMPILER": "/opt/gcc/gcc-13.2/bin/g++"
+      }
+    },
+    {
+      "name": "linux-release-mozart",
+      "inherits": "linux-release",
       "description": "For building on Mozart.",
       "environment": {
         "CXX": "/opt/gcc/gcc-13.2/bin/g++",
