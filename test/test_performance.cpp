@@ -16,22 +16,17 @@ namespace rdf {
 inline void generate_records(mem_t* dest, descriptor const& d, size_t count)
 {
   auto mem = dest;
-  auto const time = timestamp_t::clock::now();
-
   for (int64_t i = 0; i < (int64_t)count; ++i)
   {
-    auto const t = time + timestamp_t::duration{i};
-    auto const ui = (uint64_t)i;
-
     d.fields(0ul) .write<Key8>      (mem, fmt::format("_B[_{}d:{}d]", i, i + 1));
     d.fields(1ul) .write<Key16>     (mem, fmt::format("AAPL_{}:*", i % 10));
     d.fields(2ul) .write<String8>   (mem, fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
     d.fields(3ul) .write<String16>  (mem, fmt::format("SPY_{}:*", i % 10));
-    d.fields(4ul) .write<Timestamp> (mem, t);
+    d.fields(4ul) .write<Timestamp> (mem, util::make_time(i * 10000));
     d.fields(5ul) .write<Char>      (mem, 33 + i % (127 - 33));
-    d.fields(6ul) .write<Utf_Char8> (mem, ui % 256);
-    d.fields(7ul) .write<Utf_Char16>(mem, ui % 512);
-    d.fields(8ul) .write<Utf_Char32>(mem, ui % 1024);
+    d.fields(6ul) .write<Utf_Char8> (mem, (uint64_t)i % 256);
+    d.fields(7ul) .write<Utf_Char16>(mem, (uint64_t)i % 512);
+    d.fields(8ul) .write<Utf_Char32>(mem, (uint64_t)i % 1024);
     d.fields(9ul) .write<Int8>      (mem, -i << 0);
     d.fields(10ul).write<Int16>     (mem, -i << 1);
     d.fields(11ul).write<Int32>     (mem, -i << 2);
@@ -55,6 +50,7 @@ TEST_CASE( "read/write", "[perf]" )
   using field = rdf::field;
   using namespace types;
   namespace ipc = boost::interprocess;
+  namespace bal = boost::alignment;
 
   // Test a descriptor with all supported types.
   rdf::fields_builder builder;
@@ -84,71 +80,95 @@ TEST_CASE( "read/write", "[perf]" )
 
   descriptor desc {"All Fields Test Descriptor", builder};
 
-  // Set up memory mapped file.
-  char const* file_name  = "./record-rw-test.bin";
-  
-  constexpr auto k_desired_file_size = 1024 * 1024; // 1 GB.
+  // Size of the test data.
+  constexpr auto k_desired_file_size = 1024 * 1024; // 1 MB.
+
+  // Set up memory mapped file for generated data.
+  char const* src_file_name  = "./rw-test-source.bin"; 
   auto const record_count = k_desired_file_size / desc.mem_size();
   size_t const file_size = record_count * desc.mem_size();
 
-  ipc::file_mapping::remove(file_name);
-  {  
-    std::ofstream file{file_name, std::ios_base::binary};
-    file.seekp(file_size-1, std::ios_base::beg);         // Set the file size.
-    file.put(0);
-  }
+  // Remove file if it exists.
+  ipc::file_mapping::remove(src_file_name);
 
-  ipc::file_mapping m_file(file_name, ipc::read_write);  // Create a file mapping.
-  ipc::mapped_region region(m_file, ipc::read_write);    // Map the whole file with read-write permissions in this process.
-  void* mapped_file_addr = region.get_address();         // Get the address of the mapped region.
-  REQUIRE(region.get_size() == file_size);
-  REQUIRE(boost::alignment::is_aligned(field::k_record_alignment, mapped_file_addr));
-  
-  BENCHMARK_ADVANCED("generate file")(Catch::Benchmark::Chronometer meter)
-  {
-    // Generate records into filemapped memory.
-    meter.measure(
-      [=, &desc]() {
-        generate_records((mem_t*)mapped_file_addr, desc, record_count);
-      });
+  auto create_file = [](char const* name, size_t size) {  
+    std::ofstream file{ name, std::ios_base::binary };
+    file.seekp(size - 1, std::ios_base::beg);
+    file.put(0);  // Seek to end of file and write a null byte.
   };
+
+  // Create a file with desired size.
+  create_file(src_file_name, file_size);
+
+  // Create a file mapping.
+  ipc::file_mapping src_mapping(src_file_name, ipc::read_write);  
+  ipc::mapped_region src_region(src_mapping, ipc::read_write);    // Map the whole file with read-write permissions in this process.
+  void* src_file_addr = src_region.get_address();                 // Get the address of the mapped region.
+  REQUIRE(src_region.get_size() == file_size);
+  REQUIRE(bal::is_aligned(field::k_record_alignment, src_file_addr));
+  auto src_mem = (mem_t*)src_file_addr;
+
+  //BENCHMARK_ADVANCED("generate file")(Catch::Benchmark::Chronometer meter)
+  //{
+    // Generate records into filemapped memory.
+    //meter.measure(
+      //[=, &desc]() {
+        generate_records(src_mem, desc, record_count);
+      //});
+//  };
+
+  src_region.flush(); // Flush the mapped region to disk.
+
+  // Set up memory mapped file for copied data.
+  char const* dest_file_name  = "./rw-test-dest.bin"; 
+
+  // Remove file if it exists.
+  ipc::file_mapping::remove(dest_file_name);
+
+  // Create file with desired size.
+  create_file(dest_file_name, file_size);
+
+  // Create a file mapping.
+  ipc::file_mapping dest_mapping(dest_file_name, ipc::read_write);
+  ipc::mapped_region dest_region(dest_mapping, ipc::read_write);
+  void* dest_file_addr = dest_region.get_address();
+  REQUIRE(dest_region.get_size() == file_size);
+  REQUIRE(bal::is_aligned(field::k_record_alignment, dest_file_addr));
   
-  /*
-  // Read records from file.
-  auto mem = mem_alloc;
+  auto dest_mem = (mem_t*)dest_file_addr;
+  auto read_mem = src_mem;
+  auto const& d = desc;
+
+  // Read records from file and write to a second file.
   for (int64_t i = 0; i < (int64_t)record_count; ++i)
   {
-    auto record = rdf::record{mem};
-
-    auto const t = time + timestamp_t::duration{i};
-    auto const ui = (uint64_t)i;
+    auto record = rdf::record{read_mem};
 
     REQUIRE(record.get<Key8>      (d.fields(0ul))  == fmt::format("_B[_{}d:{}d]", i, i + 1));
     REQUIRE(record.get<Key16>     (d.fields(1ul))  == fmt::format("AAPL_{}:*", i % 10));
     REQUIRE(record.get<String8>   (d.fields(2ul))  == fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
     REQUIRE(record.get<String16>  (d.fields(3ul))  == fmt::format("SPY_{}:*", i % 10));
-    REQUIRE(record.get<Timestamp> (d.fields(4ul))  == t);
+    REQUIRE(record.get<Timestamp> (d.fields(4ul))  == util::make_time(i * 10000));
     REQUIRE(record.get<Char>      (d.fields(5ul))  == 33 + i % (127 - 33));
-    REQUIRE(record.get<Utf_Char8> (d.fields(6ul))  == (char8_t)(ui % 256));
-    REQUIRE(record.get<Utf_Char16>(d.fields(7ul))  == (char16_t)(ui % 512));
-    REQUIRE(record.get<Utf_Char32>(d.fields(8ul))  == (char32_t)(ui % 1024));
+    REQUIRE(record.get<Utf_Char8> (d.fields(6ul))  == (char8_t)((uint64_t)i % 256));
+    REQUIRE(record.get<Utf_Char16>(d.fields(7ul))  == (char16_t)((uint64_t)i % 512));
+    REQUIRE(record.get<Utf_Char32>(d.fields(8ul))  == (char32_t)((uint64_t)i % 1024));
     REQUIRE(record.get<Int8>      (d.fields(9ul))  == (int8_t)(-i << 0));
     REQUIRE(record.get<Int16>     (d.fields(10ul)) == (int16_t)(-i << 1));
     REQUIRE(record.get<Int32>     (d.fields(11ul)) == (int32_t)(-i << 2));
     REQUIRE(record.get<Int64>     (d.fields(12ul)) == (int64_t)(-i << 3));
-    REQUIRE(record.get<Uint8>     (d.fields(13ul)) == (uint8_t)(ui << 0));
-    REQUIRE(record.get<Uint16>    (d.fields(14ul)) == (uint16_t)(ui << 1));
-    REQUIRE(record.get<Uint32>    (d.fields(15ul)) == (uint32_t)(ui << 2));
-    REQUIRE(record.get<Uint64>    (d.fields(16ul)) == (uint64_t)(ui << 3));
+    REQUIRE(record.get<Uint8>     (d.fields(13ul)) == (uint8_t)((uint64_t)i << 0));
+    REQUIRE(record.get<Uint16>    (d.fields(14ul)) == (uint16_t)((uint64_t)i << 1));
+    REQUIRE(record.get<Uint32>    (d.fields(15ul)) == (uint32_t)((uint64_t)i << 2));
+    REQUIRE(record.get<Uint64>    (d.fields(16ul)) == (uint64_t)((uint64_t)i << 3));
     REQUIRE(record.get<Float16>   (d.fields(17ul)) == (std::float16_t)i * 1.f16);
     REQUIRE(record.get<Float32>   (d.fields(18ul)) == (std::float32_t)i * 10.f32);
     REQUIRE(record.get<Float64>   (d.fields(19ul)) == (std::float64_t)i * 100.f64);
     REQUIRE(record.get<Float128>  (d.fields(20ul)) == (std::float128_t)i * 1000.f128);
     REQUIRE(record.get<Bool>      (d.fields(21ul)) == i % 2);
 
-    mem += d.mem_size();
+    read_mem += d.mem_size();
   }
-  */
 }
 
 } // namespace rdf
