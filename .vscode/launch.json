@@ -33,7 +33,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
-      "args": ["record <-> binary file"],
+      "args": ["read/write"],
       "stopAtEntry": false,
       "cwd": "${command:cmake.launchTargetDirectory}",
       "environment": [],
