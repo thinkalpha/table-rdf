@@ -106,7 +106,7 @@ TEST_CASE( "read/write", "[perf]" )
   void* src_file_addr = src_region.get_address();                 // Get the address of the mapped region.
   REQUIRE(src_region.get_size() == file_size);
   REQUIRE(bal::is_aligned(field::k_record_alignment, src_file_addr));
-  auto src_mem = (mem_t*)src_file_addr;
+  auto const src_mem = (mem_t*)src_file_addr;
 
   //BENCHMARK_ADVANCED("generate file")(Catch::Benchmark::Chronometer meter)
   //{
@@ -135,7 +135,7 @@ TEST_CASE( "read/write", "[perf]" )
   REQUIRE(dest_region.get_size() == file_size);
   REQUIRE(bal::is_aligned(field::k_record_alignment, dest_file_addr));
   
-  auto dest_mem = (mem_t*)dest_file_addr;
+  auto write_mem = (mem_t*)dest_file_addr;
   auto read_mem = src_mem;
   auto const& d = desc;
 
@@ -144,31 +144,34 @@ TEST_CASE( "read/write", "[perf]" )
   {
     auto record = rdf::record{read_mem};
 
-    REQUIRE(record.get<Key8>      (d.fields(0ul))  == fmt::format("_B[_{}d:{}d]", i, i + 1));
-    REQUIRE(record.get<Key16>     (d.fields(1ul))  == fmt::format("AAPL_{}:*", i % 10));
-    REQUIRE(record.get<String8>   (d.fields(2ul))  == fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
-    REQUIRE(record.get<String16>  (d.fields(3ul))  == fmt::format("SPY_{}:*", i % 10));
-    REQUIRE(record.get<Timestamp> (d.fields(4ul))  == util::make_time(i * 10000));
-    REQUIRE(record.get<Char>      (d.fields(5ul))  == 33 + i % (127 - 33));
-    REQUIRE(record.get<Utf_Char8> (d.fields(6ul))  == (char8_t)((uint64_t)i % 256));
-    REQUIRE(record.get<Utf_Char16>(d.fields(7ul))  == (char16_t)((uint64_t)i % 512));
-    REQUIRE(record.get<Utf_Char32>(d.fields(8ul))  == (char32_t)((uint64_t)i % 1024));
-    REQUIRE(record.get<Int8>      (d.fields(9ul))  == (int8_t)(-i << 0));
-    REQUIRE(record.get<Int16>     (d.fields(10ul)) == (int16_t)(-i << 1));
-    REQUIRE(record.get<Int32>     (d.fields(11ul)) == (int32_t)(-i << 2));
-    REQUIRE(record.get<Int64>     (d.fields(12ul)) == (int64_t)(-i << 3));
-    REQUIRE(record.get<Uint8>     (d.fields(13ul)) == (uint8_t)((uint64_t)i << 0));
-    REQUIRE(record.get<Uint16>    (d.fields(14ul)) == (uint16_t)((uint64_t)i << 1));
-    REQUIRE(record.get<Uint32>    (d.fields(15ul)) == (uint32_t)((uint64_t)i << 2));
-    REQUIRE(record.get<Uint64>    (d.fields(16ul)) == (uint64_t)((uint64_t)i << 3));
-    REQUIRE(record.get<Float16>   (d.fields(17ul)) == (std::float16_t)i * 1.f16);
-    REQUIRE(record.get<Float32>   (d.fields(18ul)) == (std::float32_t)i * 10.f32);
-    REQUIRE(record.get<Float64>   (d.fields(19ul)) == (std::float64_t)i * 100.f64);
-    REQUIRE(record.get<Float128>  (d.fields(20ul)) == (std::float128_t)i * 1000.f128);
-    REQUIRE(record.get<Bool>      (d.fields(21ul)) == i % 2);
+    d.fields(0ul).write<Key8>      ( write_mem, record.get<Key8>      (d.fields(0ul)) );
+    d.fields(1ul).write<Key16>     ( write_mem, record.get<Key16>     (d.fields(1ul)) );
+    d.fields(2ul).write<String8>   ( write_mem, record.get<String8>   (d.fields(2ul)) );
+    d.fields(3ul).write<String16>  ( write_mem, record.get<String16>  (d.fields(3ul)) );
+    d.fields(4ul).write<Timestamp> ( write_mem, record.get<Timestamp> (d.fields(4ul)) );
+    d.fields(5ul).write<Char>      ( write_mem, record.get<Char>      (d.fields(5ul)) );
+    d.fields(6ul).write<Utf_Char8> ( write_mem, record.get<Utf_Char8> (d.fields(6ul)) );
+    d.fields(7ul).write<Utf_Char16>( write_mem, record.get<Utf_Char16>(d.fields(7ul)) );
+    d.fields(8ul).write<Utf_Char32>( write_mem, record.get<Utf_Char32>(d.fields(8ul)) );
+    d.fields(9ul).write<Int8>      ( write_mem, record.get<Int8>      (d.fields(9ul)) );
+    d.fields(10ul).write<Int16>    ( write_mem, record.get<Int16>     (d.fields(10ul)) );
+    d.fields(11ul).write<Int32>    ( write_mem, record.get<Int32>     (d.fields(11ul)) );
+    d.fields(12ul).write<Int64>    ( write_mem, record.get<Int64>     (d.fields(12ul)) );
+    d.fields(13ul).write<Uint8>    ( write_mem, record.get<Uint8>     (d.fields(13ul)) );
+    d.fields(14ul).write<Uint16>   ( write_mem, record.get<Uint16>    (d.fields(14ul)) );
+    d.fields(15ul).write<Uint32>   ( write_mem, record.get<Uint32>    (d.fields(15ul)) );
+    d.fields(16ul).write<Uint64>   ( write_mem, record.get<Uint64>    (d.fields(16ul)) );
+    d.fields(17ul).write<Float16>  ( write_mem, record.get<Float16>   (d.fields(17ul)) );
+    d.fields(18ul).write<Float32>  ( write_mem, record.get<Float32>   (d.fields(18ul)) );
+    d.fields(19ul).write<Float64>  ( write_mem, record.get<Float64>   (d.fields(19ul)) );
+    d.fields(20ul).write<Float128> ( write_mem, record.get<Float128>  (d.fields(20ul)) );
+    d.fields(21ul).write<Bool>     ( write_mem, record.get<Bool>      (d.fields(21ul)) );
 
     read_mem += d.mem_size();
+    write_mem += d.mem_size();
   }
+
+  REQUIRE(std::memcmp(src_file_addr, dest_file_addr, file_size) == 0);
 }
 
 } // namespace rdf
