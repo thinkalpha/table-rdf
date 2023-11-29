@@ -55,5 +55,10 @@ private:
   std::string const str_fmt_;
 };
 
+inline timestamp_t make_time(raw_time_t raw_time)
+{
+  return timestamp_t{ timestamp_t::duration{ raw_time } };
+}
+
 } // namespace util
 } // namespace rdf
