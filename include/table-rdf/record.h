@@ -36,7 +36,7 @@ inline auto mem_to_record(mem_t const& mem) {
   return record{&mem};
 }
 
-mem_t const* record::memory() const
+inline mem_t const* record::memory() const
 { 
   return mem_; 
 };

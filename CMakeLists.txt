@@ -74,7 +74,8 @@ set_property              (TARGET table-rdf PROPERTY MSVC_RUNTIME_LIBRARY "Multi
 # This target can be run directly or invoked via Ctest.
 #
 set(TRDF_CATCH_TESTS test/test_main.cpp
-                     test/test_core.cpp)
+                     test/test_core.cpp
+                     test/test_performance.cpp)
 
 add_executable            (table-rdf-tests ${TRDF_CATCH_TESTS})
 
@@ -87,7 +88,7 @@ target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    BOOST_ENABLE_ASSERT_HANDLER
                                                    # TODO: Update to Catch2 v3.0.1 to get support for runtime --skip-benchmarks.
                                                    # https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md#skip-all-benchmarks 
-                                                   #[[CATCH_CONFIG_ENABLE_BENCHMARKING]])
+                                                   CATCH_CONFIG_ENABLE_BENCHMARKING)
 
 target_link_libraries     (table-rdf-tests PRIVATE table-rdf
                                                    Catch2::Catch2)
