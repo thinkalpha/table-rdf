@@ -48,31 +48,31 @@ inline std::string record::to_string(descriptor const& desc) const
 
   #define FMT_FIELD(F) \
     case F: \
-      out_it = fmt::format_to(out_it, f.fmt_, get<F>(f)); \
+      out_it = fmt::format_to(out_it, f.fmt(), get<F>(f)); \
       break;
 
   for (auto f : desc.fields()) {
-    switch(f.type_)
+    switch(f.type())
     {
       FMT_FIELD(Key8);
       FMT_FIELD(Key16);
       FMT_FIELD(String8);
       FMT_FIELD(String16);
       case Timestamp: {
-        out_it = fmt::format_to(out_it, f.fmt_, util::time_to_str(get<Timestamp>(f)));
+        out_it = fmt::format_to(out_it, f.fmt(), util::time_to_str(get<Timestamp>(f)));
         break;
       }
       FMT_FIELD(Char);
       case Utf_Char8: {
-        out_it = fmt::format_to(out_it, f.fmt_, (uint64_t)get<Utf_Char8>(f));  // TODO: Fix this temporary hack.
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char8>(f));  // TODO: Fix this temporary hack.
         break;
       }
       case Utf_Char16: {
-        out_it = fmt::format_to(out_it, f.fmt_, (uint64_t)get<Utf_Char16>(f));  // TODO: Fix this temporary hack.
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char16>(f));  // TODO: Fix this temporary hack.
         break;
       }
       case Utf_Char32: {
-        out_it = fmt::format_to(out_it, f.fmt_, (uint64_t)get<Utf_Char32>(f));  // TODO: Fix this temporary hack.
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char32>(f));  // TODO: Fix this temporary hack.
         break;
       }
       FMT_FIELD(Int8);
@@ -84,13 +84,13 @@ inline std::string record::to_string(descriptor const& desc) const
       FMT_FIELD(Uint32);
       FMT_FIELD(Uint64);
       case Float16: {
-        out_it = fmt::format_to(out_it, f.fmt_, (float)get<Float16>(f));        // TODO: Fix this temporary hack.
+        out_it = fmt::format_to(out_it, f.fmt(), (float)get<Float16>(f));        // TODO: Fix this temporary hack.
         break;
       }
       FMT_FIELD(Float32);
       FMT_FIELD(Float64);
       case Float128: {
-        out_it = fmt::format_to(out_it, f.fmt_, (double)get<Float128>(f));      // TODO: Fix this temporary hack.
+        out_it = fmt::format_to(out_it, f.fmt(), (double)get<Float128>(f));      // TODO: Fix this temporary hack.
         break;
       }
       FMT_FIELD(Bool);

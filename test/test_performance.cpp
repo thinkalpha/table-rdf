@@ -22,7 +22,7 @@ inline void generate_records(mem_t* dest, descriptor const& d, size_t count)
     d.fields(1ul) .write<Key16>     (mem, fmt::format("AAPL_{}:*", i % 10));
     d.fields(2ul) .write<String8>   (mem, fmt::format("_B[_{}d:{}d]", i + 2, i + 3));
     d.fields(3ul) .write<String16>  (mem, fmt::format("SPY_{}:*", i % 10));
-    d.fields(4ul) .write<Timestamp> (mem, util::make_time(i * 10000));
+    d.fields(4ul) .write<Timestamp> (mem, util::make_timestamp(i * 10000));
     d.fields(5ul) .write<Char>      (mem, 33 + i % (127 - 33));
     d.fields(6ul) .write<Utf_Char8> (mem, (uint64_t)i % 256);
     d.fields(7ul) .write<Utf_Char16>(mem, (uint64_t)i % 512);

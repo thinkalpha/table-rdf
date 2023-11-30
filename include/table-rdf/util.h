@@ -26,7 +26,7 @@ inline timestamp_t str_to_time(std::string_view sv, std::string_view format)
   return ts;
 }
 
-inline std::string time_to_str(timestamp_t ts, std::string_view format = k_time_to_str_fmt_)
+inline std::string time_to_str(timestamp_t ts, std::string_view format = k_time_to_str_fmt)
 {
   return std::vformat(format.data(), std::make_format_args(ts));
 }
@@ -55,7 +55,7 @@ private:
   std::string const str_fmt_;
 };
 
-inline timestamp_t make_time(raw_time_t raw_time)
+inline timestamp_t make_timestamp(raw_time_t raw_time)
 {
   return timestamp_t{ timestamp_t::duration{ raw_time } };
 }

@@ -27,8 +27,8 @@ public:
                field const& fields(field::index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
                field const& fields(char const* name) const { return fields_by_name_.at(name); }
   
-     field::offset_t        offset(char const* name) const { return fields(name).offset_; }
-     field::offset_t        offset(field::index_t index) const { return fields(index).offset_; }
+     field::offset_t        offset(char const* name) const { return fields(name).offset(); }
+     field::offset_t        offset(field::index_t index) const { return fields(index).offset(); }
 
   // The in-memory size including padding for alignment to k_record_alignment.
   size_t mem_size() const { return mem_size_; }

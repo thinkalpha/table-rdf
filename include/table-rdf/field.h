@@ -17,6 +17,8 @@ namespace rdf {
 
 struct field
 {
+  friend struct fields_builder;
+
   using offset_t = uintptr_t;
   using index_t = size_t;
   using name_t = std::string;
@@ -53,23 +55,29 @@ struct field
   template <type T> void             write(mem_t* base, value_t<T> const value) const;
   template <type T> value_t<T> const read(mem_t const* base) const;
 
-  auto type_size() const { return types::k_type_props[type_].size_; }
+  auto name() const { return name_; }
+  auto description() const { return description_; }
+  auto type() const { return type_; }
+  auto type_name() const { return types::enum_names_type(type_); }
   auto payload() const { return payload_; }
-  auto size() const { return type_size() + payload(); }
-  auto align() const { return types::k_type_props[type_].alignment_; }
+  auto fmt() const { return fmt_; }
   auto offset() const { return offset_; }
   auto index() const { return index_; }
 
+  auto type_size() const { return types::k_type_props[type_].size_; }
+  auto size() const { return type_size() + payload(); }
+  auto align() const { return types::k_type_props[type_].alignment_; }
+
 private:
-  template<type T> void             write_str(mem_t* base, value_t<T> value) const;
-  template<type T> value_t<T> const read_str(mem_t const* base) const;
+  template<types::type T> void             write_str(mem_t* base, value_t<T> value) const;
+  template<types::type T> value_t<T> const read_str(mem_t const* base) const;
 
   template<class V>  V const* offset_ptr(mem_t const* base) const;
   template<class V>  V*       offset_ptr(mem_t* base) const;
 
   template <types::type T> void validate() const;
 
-public:
+private:
   name_t const name_;
   description_t const description_;
   types::type const type_;
