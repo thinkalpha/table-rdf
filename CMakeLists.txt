@@ -17,6 +17,8 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Boost 1.80.0 REQUIRED)
 find_package(date CONFIG REQUIRED)
+find_package(TBB CONFIG REQUIRED)
+
 
 # In particular -Wreorder should be on to protect our use of std::move() in constructor initialiser lists.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -81,7 +83,8 @@ add_executable            (table-rdf-tests ${TRDF_CATCH_TESTS})
 
 set_property              (TARGET table-rdf-tests PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS})
+target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS}
+                                                   -ltbb)
 target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    TRDF_TEST=1
                                                    TRDF_FILE_LOGGING=0
@@ -91,7 +94,8 @@ target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    CATCH_CONFIG_ENABLE_BENCHMARKING)
 
 target_link_libraries     (table-rdf-tests PRIVATE table-rdf
-                                                   Catch2::Catch2)
+                                                   Catch2::Catch2
+                                                   TBB::tbb)
 
 # Catch2 setup and Ctest integration.
 include(CTest)

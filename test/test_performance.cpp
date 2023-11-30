@@ -8,6 +8,7 @@
 #if !TRDF_HAS_CHRONO_PARSE
   #include <date/date.h>
 #endif
+#include <oneapi/tbb.h>
 #include <ranges>
 #include <fstream>
 
@@ -125,7 +126,56 @@ TEST_CASE( "read/write", "[perf]" )
   void* dest_file_addr = dest_region.get_address();
   REQUIRE(dest_region.get_size() == file_size);
   REQUIRE(bal::is_aligned(field::k_record_alignment, dest_file_addr));
-  
+
+  SECTION("tbb rdf (field read / write)")
+  {
+    // Read records from file and write to a second file.
+    BENCHMARK_ADVANCED("tbb rdf (field read / write)")(Catch::Benchmark::Chronometer meter)
+    {
+      meter.measure(
+        [=, &desc]()
+        {
+          auto write_mem = (mem_t*)dest_file_addr;
+          mem_t* read_mem = src_mem;
+          auto const& d = desc;
+
+          tbb::parallel_for(tbb::blocked_range<int64_t>(0, record_count),
+            [&, read_mem, write_mem](const tbb::blocked_range<int64_t>& range)
+            {
+              for (int64_t i = range.begin(); i != range.end(); ++i)
+              {
+                auto const rm = read_mem + i * d.mem_size();
+                auto const wm = write_mem + i * d.mem_size();
+                d.fields(0ul).write<Key8>      ( wm, d.fields(0ul).read<Key8>      (rm) );
+                d.fields(1ul).write<Key16>     ( wm, d.fields(1ul).read<Key16>     (rm) );
+                d.fields(2ul).write<String8>   ( wm, d.fields(2ul).read<String8>   (rm) );
+                d.fields(3ul).write<String16>  ( wm, d.fields(3ul).read<String16>  (rm) );
+                d.fields(4ul).write<Timestamp> ( wm, d.fields(4ul).read<Timestamp> (rm) );
+                d.fields(5ul).write<Char>      ( wm, d.fields(5ul).read<Char>      (rm) );
+                d.fields(6ul).write<Utf_Char8> ( wm, d.fields(6ul).read<Utf_Char8> (rm) );
+                d.fields(7ul).write<Utf_Char16>( wm, d.fields(7ul).read<Utf_Char16>(rm) );
+                d.fields(8ul).write<Utf_Char32>( wm, d.fields(8ul).read<Utf_Char32>(rm) );
+                d.fields(9ul).write<Int8>      ( wm, d.fields(9ul).read<Int8>      (rm) );
+                d.fields(10ul).write<Int16>    ( wm, d.fields(10ul).read<Int16>    (rm) );
+                d.fields(11ul).write<Int32>    ( wm, d.fields(11ul).read<Int32>    (rm) );
+                d.fields(12ul).write<Int64>    ( wm, d.fields(12ul).read<Int64>    (rm) );
+                d.fields(13ul).write<Uint8>    ( wm, d.fields(13ul).read<Uint8>    (rm) );
+                d.fields(14ul).write<Uint16>   ( wm, d.fields(14ul).read<Uint16>   (rm) );
+                d.fields(15ul).write<Uint32>   ( wm, d.fields(15ul).read<Uint32>   (rm) );
+                d.fields(16ul).write<Uint64>   ( wm, d.fields(16ul).read<Uint64>   (rm) );
+                d.fields(17ul).write<Float16>  ( wm, d.fields(17ul).read<Float16>  (rm) );
+                d.fields(18ul).write<Float32>  ( wm, d.fields(18ul).read<Float32>  (rm) );
+                d.fields(19ul).write<Float64>  ( wm, d.fields(19ul).read<Float64>  (rm) );
+                d.fields(20ul).write<Float128> ( wm, d.fields(20ul).read<Float128> (rm) );
+                d.fields(21ul).write<Bool>     ( wm, d.fields(21ul).read<Bool>     (rm) );
+              }
+          });
+        });
+    };
+
+    REQUIRE(std::memcmp(src_file_addr, dest_file_addr, file_size) == 0);
+  }
+
   SECTION("trivial")
   {
     BENCHMARK_ADVANCED("trivial copy")(Catch::Benchmark::Chronometer meter)
@@ -143,7 +193,7 @@ TEST_CASE( "read/write", "[perf]" )
   SECTION("rdf (record read / field write)")
   {
     // Read records from file and write to a second file.
-    BENCHMARK_ADVANCED("rdf interface copy")(Catch::Benchmark::Chronometer meter)
+    BENCHMARK_ADVANCED("rdf (record read / field write)")(Catch::Benchmark::Chronometer meter)
     {
       meter.measure(
         [=, &desc]()
@@ -191,7 +241,7 @@ TEST_CASE( "read/write", "[perf]" )
   SECTION("rdf (field read / write)")
   {
     // Read records from file and write to a second file.
-    BENCHMARK_ADVANCED("rdf interface copy")(Catch::Benchmark::Chronometer meter)
+    BENCHMARK_ADVANCED("rdf (field read / write)")(Catch::Benchmark::Chronometer meter)
     {
       meter.measure(
         [=, &desc]()

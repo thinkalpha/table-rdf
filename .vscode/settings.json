@@ -105,7 +105,12 @@
         "cinttypes": "cpp",
         "csetjmp": "cpp",
         "scoped_allocator": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "*.tpp": "cpp",
+        "stdfloat": "cpp",
+        "*.tcc": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     },
     "cmake.configureOnOpen": false,
     "terminal.integrated.fontSize": 12,
