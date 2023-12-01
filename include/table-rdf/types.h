@@ -46,9 +46,14 @@ struct type_props {
   #error "<stdfloat> types not available"
 #endif
 
+// String types are aligned to their prefix type. If you try to write a
+// 16-bit string to a Key8 or String8 field you will get a compile time error.
+// The character type must have alignment <= prefix type since we
+// want to avoid computing dynamic alignment during field access or storing
+// a separate payload offset.
 static constexpr std::array<type_props, type_numof> k_type_props {
-  type_props{ Key8,       "*key8*",  sizeof(uint8_t),              alignof(uint8_t) },      // String types are aligned to their prefix type
-  type_props{ Key16,      "*key16*", sizeof(uint16_t),             alignof(uint16_t) },     // and their payload is aligned to the string char type.
+  type_props{ Key8,       "*key8*",  sizeof(uint8_t),              alignof(uint8_t) },
+  type_props{ Key16,      "*key16*", sizeof(uint16_t),             alignof(uint16_t) },   // If we need character types > 16-bits a new type can be added.
   type_props{ String8,    "str8",    sizeof(uint8_t),              alignof(uint8_t) },
   type_props{ String16,   "str16",   sizeof(uint16_t),             alignof(uint16_t) },
   type_props{ Timestamp,  "tstamp",  sizeof(raw_time_t),           alignof(raw_time_t) },

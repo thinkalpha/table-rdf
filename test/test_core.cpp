@@ -36,21 +36,89 @@ TEST_CASE( "basics", "[core]" )
   }
 }
 
-TEST_CASE( "fields_builder", "[core]" )
+TEST_CASE( "field packing", "[core]" )
 {
   using namespace types;
-  rdf::fields_builder builder;
-  builder.push({"formula",    "formula description", String8, 31})
-         .push({ "symbol",    "ticker symbol",       Key8, 31})
-         .push({ "timestamp", "utc timestamp",       Timestamp })
-         .push({ "field 4",   "field 4 description", Int32 })
-         .push({ "field 5",   "field 5 description", Float32 })
-         .push({ "field 6",   "field 6 description", Float64 })
-         .push({ "field 7",   "field 7 description", Bool })
-         .push({ "field 8",   "field 8 description", Int32 });
 
-  rdf::descriptor d {"XYZ Descriptor", builder};
+  const auto payload_size = 186;
+
+  rdf::fields_builder builder;
+  builder.push({ "1",  "", String8, payload_size})
+         .push({ "2",  "", Int8 })
+         .push({ "3",  "", Key8, payload_size})
+         .push({ "4",  "", Uint8 })
+         .push({ "5",  "", Timestamp })
+         .push({ "6",  "", Bool })
+         .push({ "7",  "", Int32 })
+         .push({ "8",  "", Int16 })
+         .push({ "9",  "", Float32 })
+         .push({ "10", "", Bool })
+         .push({ "11", "", Float64 })
+         .push({ "12", "", Bool })
+         .push({ "13", "", Float128 })
+         .push({ "14", "", Bool })
+         .push({ "15", "", Int32 });
+
+  rdf::descriptor d {"Descriptor", builder, false};
   SPDLOG_DEBUG(d.describe());
+
+  rdf::descriptor d_packed {"Packed Descriptor", builder, true};
+  SPDLOG_DEBUG(d_packed.describe(true));
+
+  REQUIRE(d.mem_size() >= d_packed.mem_size());
+
+  struct str8 {
+     uint8_t prefix;
+     std::string_view::value_type payload[payload_size];
+  };
+  using key8 = str8;
+
+  // Check that our alignment calculations match the compiler's.
+  struct check_align {
+    str8 f1;
+    int8_t f2;
+    key8 f3;
+    uint8_t f4;
+    timestamp_t f5;
+    bool f6;
+    int32_t f7;
+    int16_t f8;
+    std::float32_t f9;
+    bool f10;
+    std::float64_t f11;
+    bool f12;
+    std::float128_t f13;
+    bool f14;
+    int32_t f15;
+  };
+
+  struct check_align_packed {
+    std::float128_t f13;
+    timestamp_t f5;
+    std::float64_t f11;
+    int32_t f7;
+    std::float32_t f9;
+    int32_t f15;
+    int16_t f8;
+    str8 f1;
+    int8_t f2;
+    key8 f3;
+    uint8_t f4;
+    bool f6;
+    bool f10;
+    bool f12;
+    bool f14;
+  };
+
+  SPDLOG_DEBUG("sizeof(check_align) = {}", sizeof(check_align));
+  SPDLOG_DEBUG("alignof(check_align) = {}", alignof(check_align));
+  SPDLOG_DEBUG("sizeof(check_align_packed) = {}", sizeof(check_align_packed));
+  SPDLOG_DEBUG("alignof(check_align_packed) = {}", alignof(check_align_packed));
+
+  REQUIRE(sizeof(check_align) == d.mem_size());
+  REQUIRE(alignof(check_align) == d.mem_align());
+  REQUIRE(sizeof(check_align_packed) == d_packed.mem_size());
+  REQUIRE(alignof(check_align_packed) == d_packed.mem_align());
 }
 
 TEST_CASE( "basic usage", "[core]" )

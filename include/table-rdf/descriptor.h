@@ -15,11 +15,15 @@ namespace rdf
 class descriptor final
 {
 public:
+  // If pack is true, field offsets are sorted by descending alignment, 
+  // but the order of the fields in the descriptor is preserved.
   inline descriptor(std::string const& name,
-                    std::vector<field> const& fields);
+                    std::vector<field> const& fields,
+                    bool pack = true);
 
   inline descriptor(std::string const& name,
-                    fields_builder const& builder);
+                    fields_builder const& builder,
+                    bool pack = true);
 
   std::string_view          name() const { return name_; }
 
@@ -30,18 +34,19 @@ public:
      field::offset_t        offset(char const* name) const { return fields(name).offset(); }
      field::offset_t        offset(field::index_t index) const { return fields(index).offset(); }
 
-  // The in-memory size including padding for alignment to k_record_alignment.
-  size_t mem_size() const { return mem_size_; }
+  size_t mem_size() const { return mem_size_; }     // The in-memory size including padding for alignment to mem_align().
+  size_t mem_align() const { return mem_align_; }
 
   // Logging.
-  inline std::string describe() const;
+  inline std::string describe(bool sort_by_alignment = false) const;
   inline std::string header() const;
 
 private:
-  std::string const name_;
-  std::vector<field> const fields_;
+  std::string name_;
+  std::vector<field> fields_;
   std::map<field::name_t, field const&> fields_by_name_;
   size_t mem_size_;
+  size_t mem_align_;
 };
 
 } // namespace rdf

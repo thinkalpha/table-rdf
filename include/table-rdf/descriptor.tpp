@@ -1,28 +1,63 @@
 #pragma once
+#include <ranges>
 
 namespace rdf
 {
 
   descriptor::descriptor(std::string const& name,
-                         std::vector<field> const& fields)
+                         std::vector<field> const& fields,
+                         bool pack)
       : name_{name},
         fields_{fields},
-        mem_size_{0}
+        mem_size_{0},
+        mem_align_{0}
   {
-    // TODO: The descriptor could optimise memory packing by discovering an optimal ordering
-    // of fields to minimise padding.
-    for (auto const& f : fields_)
-    {
-      fields_by_name_.insert({f.name(), f});
+    namespace bal = boost::alignment;
+
+    if (fields_.empty()) {
+      throw std::runtime_error("descriptor must have at least one field");
     }
 
-    auto last = fields_.back();
-    mem_size_ = boost::alignment::align_up(last.offset() + last.size(), field::k_record_alignment);
+    // Create a vector of field indices [0, 1, 2, ...].
+    std::vector<field::index_t> indices(fields_.size());
+    std::iota(std::begin(indices), std::end(indices), 0);
+
+    if (pack)
+    {
+      // Sort indices by descending alignment.
+      std::ranges::sort(indices, [&](auto a, auto b) {
+        return fields_[a].align() > fields_[b].align();
+      });
+    }
+
+    // Compute offsets so that the in-memory layout is in order of indices vector.
+    fields_[indices[0]].offset_ = 0;
+    auto max_align = fields_[indices[0]].align();
+    for (auto [a, b] : indices | std::views::adjacent<2>)
+    {
+      auto offset_ptr = (void*)(fields_[a].offset() + fields_[a].size());
+      fields_[b].offset_ = (field::offset_t)bal::align_up(offset_ptr, fields_[b].align());
+      max_align = std::max(max_align, fields_[b].align());
+    }
+
+    // Set the alignment of the descriptor to the maximum alignment of its fields.
+    mem_align_ = max_align;
+
+    // Compute total size including alignment padding.
+    auto last = fields_[indices.back()];
+    mem_size_ = bal::align_up(last.offset() + last.size(), mem_align_);
+    BOOST_ASSERT(mem_size_ % mem_align_ == 0);
+
+    // Build a map of field names to fields.
+    for (auto const& f : fields_) {
+      BOOST_VERIFY_MSG(fields_by_name_.insert({f.name(), f}).second, fmt::format("duplicate field name '{}'", f.name()).c_str());
+    }
   }
 
   descriptor::descriptor(std::string const& name,
-                         fields_builder const& builder)
-    : descriptor(name, builder.get())
+                         fields_builder const& builder,
+                         bool pack)
+    : descriptor(name, builder.get(), pack)
   {
   }
 
@@ -37,20 +72,25 @@ namespace rdf
     return fmt::to_string(out);
   }
 
-  std::string descriptor::describe() const
+  std::string descriptor::describe(bool sort_by_alignment) const
   {
-    auto const str = [this]() {
+    std::vector<field::index_t> indices(fields_.size());
+    std::iota(std::begin(indices), std::end(indices), 0);
+    if (sort_by_alignment) {
+      std::ranges::sort(indices, [&](auto a, auto b) {
+        return fields_[a].align() > fields_[b].align();
+      });
+    }
+
+    auto const str = [&indices, this]() {
       std::stringstream ss;
       ss << "\n--- " << name() << " ---\n";
-      for (auto& f : fields_) {
-        auto field_fmt = fmt::format("{:25} (type: {:8} size: {:3} align: {:3}, offset: {:4}) - '{}'",
-                                     f.name(), f.type_name(), f.size(), f.align(), f.offset(), f.description());
-        ss << field_fmt << "\n";
+      for (auto i : indices) {
+        ss << fields(i).describe() << "\n";
       }
-      ss << "--- size: " << mem_size() << ", alignment: " << field::k_record_alignment << " ---\n";
+      ss << "--- size: " << mem_size() << ", alignment: " << mem_align() << " ---\n";
       return ss.str();
     }();
     return str;
   }
-
 } // namespace rdf

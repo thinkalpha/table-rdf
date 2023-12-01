@@ -12,12 +12,17 @@ namespace bal = boost::alignment;
   #define DBG_VALIDATE_FIELD(EnumType) (void)0
 #endif
 
+// TODO: string_t is currently std::string_view which is std::basic_string_view<char>.
+// Ensure this can be generalised to any char type.
+
+
+
 template<class V>
 V const* field::offset_ptr(mem_t const* base) const
 {
   auto ptr = reinterpret_cast<V const*>(base + offset());
-  BOOST_ASSERT(bal::is_aligned(align(), ptr));
-  BOOST_ASSERT(alignof(V) <= align());
+  BOOST_ASSERT(bal::is_aligned(ptr, align()));
+  BOOST_ASSERT(bal::is_aligned(ptr, alignof(V)));
   return ptr;
 }
 
@@ -25,8 +30,8 @@ template<class V>
 V* field::offset_ptr(mem_t* base) const
 {
   auto ptr = reinterpret_cast<V*>(base + offset());
-  BOOST_ASSERT(bal::is_aligned(align(), ptr));
-  BOOST_ASSERT(alignof(V) <= align());
+  BOOST_ASSERT(bal::is_aligned(ptr, align()));
+  BOOST_ASSERT(bal::is_aligned(ptr, alignof(V)));
   return ptr;
 }
 
@@ -78,21 +83,23 @@ void field::write_str(mem_t* base, value_t<T> value) const
   using char_type = value_t<T>::value_type;
   using prefix_t = traits<T>::prefix_t;
 
-  // TODO: Size-prefix is number of *bytes*. But this means we need to convert to number of *chars*
-  // in read_str. Should we enforce sizeof(char_type) == 1 to save the multiply and divide?
+  // See comment in types.h.
+  static_assert(alignof(prefix_t) >= alignof(char_type));
+  constexpr auto k_payload_offset = std::max(sizeof(prefix_t), sizeof(char_type));
+
   auto const length = value.length() * sizeof(char_type);
 
   if (length > payload()) {
     throw std::runtime_error("string too large for payload");   // TODO: Change to assert for speed?
   }
   else if (length != (prefix_t)length) {
-    throw std::runtime_error(fmt::format("strings of type {} must fit in {}-bits", enum_names_type(type_), sizeof(prefix_t) * 8));
+    throw std::runtime_error(fmt::format("string of type '{}' has length {} that does not fit in {}-bits", enum_names_type(type_), length, sizeof(prefix_t) * 8));
   }
 
   auto length_mem = offset_ptr<prefix_t>(base);
   *reinterpret_cast<prefix_t*>(length_mem) = (prefix_t)length;   // Write length prefix.
   
-  auto const char_mem = offset_ptr<char_type>(base + sizeof(prefix_t));
+  auto const char_mem = offset_ptr<char_type>(base + k_payload_offset);
   std::memcpy(char_mem, value.data(), length);                   // Write string.
 }
 
@@ -101,8 +108,13 @@ value_t<T> const field::read_str(mem_t const* base) const
 {
   using char_type = value_t<T>::value_type;
   using prefix_t = traits<T>::prefix_t;
+
+  // See comment in types.h.
+  static_assert(alignof(prefix_t) >= alignof(char_type));
+  constexpr auto k_payload_offset = std::max(sizeof(prefix_t), sizeof(char_type));
+
   auto const length = *offset_ptr<prefix_t const>(base) / sizeof(char_type);
-  auto const chars = offset_ptr<char_type const>(base + sizeof(prefix_t));
+  auto const chars = offset_ptr<char_type const>(base + k_payload_offset);
   return { chars, length };
 }
 
@@ -125,6 +137,12 @@ void field::validate() const
                                                         name_, align(), typeid(V).name(), alignof(V)).c_str());
 
   }
+}
+
+std::string field::describe() const
+{
+  return fmt::format("{:25} (type: {:8} size: {:3} align: {:3}, offset: {:4}) - '{}'",
+                     name(), type_name(), size(), align(), offset(), description());
 }
 
 } // namespace rdf

@@ -18,6 +18,7 @@ namespace rdf {
 struct field
 {
   friend struct fields_builder;
+  friend class descriptor;
 
   using offset_t = uintptr_t;
   using index_t = size_t;
@@ -64,9 +65,10 @@ struct field
   auto offset() const { return offset_; }
   auto index() const { return index_; }
 
-  auto type_size() const { return types::k_type_props[type_].size_; }
-  auto size() const { return type_size() + payload(); }
+  auto size() const { return types::k_type_props[type_].size_ + payload(); }   // Size of the field including payload. Does not include padding.
   auto align() const { return types::k_type_props[type_].alignment_; }
+
+  inline std::string describe() const;
 
 private:
   template<types::type T> void             write_str(mem_t* base, value_t<T> value) const;
@@ -78,12 +80,12 @@ private:
   template <types::type T> void validate() const;
 
 private:
-  name_t const name_;
-  description_t const description_;
-  types::type const type_;
-  size_t const payload_;
-  fmt::basic_runtime<char> const fmt_;  // fmt library format specifier for printing (https://hackingcpp.com/cpp/libs/fmt.html).
-  offset_t offset_;                     // TODO: Keep this const.
+  name_t name_;
+  description_t description_;
+  types::type type_;
+  size_t payload_;
+  fmt::basic_runtime<char> fmt_;  // fmt library format specifier for printing (https://hackingcpp.com/cpp/libs/fmt.html).
+  offset_t offset_;               // TODO: Keep this const.
   index_t index_;
 };
 
