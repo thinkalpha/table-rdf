@@ -12,7 +12,7 @@
 
 namespace rdf
 {
-class descriptor final
+class descriptor
 {
 public:
   // Construct a descriptor from a vector of fields.
@@ -30,6 +30,8 @@ public:
   inline descriptor(std::string const& name,
                     fields_builder const& builder,
                     bool pack = true);
+
+  virtual ~descriptor() = default;
 
   std::string_view          name() const { return name_; }
 

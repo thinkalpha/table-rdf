@@ -2,6 +2,9 @@
 #include "types.h"
 
 namespace rdf {
+
+class record;
+
 namespace types {
 
 template<type T> struct traits_base
@@ -44,6 +47,8 @@ template<> struct traits<Bool>       : traits_base<Bool>       { using type = bo
 template <type T> using value_t = traits<T>::type;
 
 namespace concepts {
+
+  template<class R> concept record = std::derived_from<R, rdf::record>;
 
   template<class V> concept string = std::is_same_v<V, string_t>;
 

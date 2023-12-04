@@ -238,9 +238,9 @@ TEST_CASE( "basic usage", "[core]" )
     SECTION( "record read via view" )
     {
       mspan mem_span{mem_alloc, d.mem_size() * k_count};
-      auto records = rdf::views::records(mem_span, d);
+      auto records = rdf::views::records<record>(mem_span, d);
 
-      static_assert(std::is_same_v<rdf::views::records_view_t, decltype(records)>);
+      static_assert(std::is_same_v<rdf::views::records_view_t<record>, decltype(records)>);
       
       for (auto r : records) {
         SPDLOG_DEBUG(r.to_string(d));

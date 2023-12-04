@@ -9,7 +9,7 @@
 namespace rdf
 {
 // Base record type.
-class record final
+class record
 {
 public:
   record(mem_t const* mem)
@@ -32,8 +32,9 @@ private:
   mem_t const* mem_;
 };
 
+template<concepts::record R>
 inline auto mem_to_record(mem_t const& mem) {
-  return record{&mem};
+  return R{&mem};
 }
 
 inline mem_t const* record::memory() const
