@@ -114,5 +114,6 @@
     },
     "cmake.configureOnOpen": false,
     "terminal.integrated.fontSize": 12,
-    "C_Cpp.default.compilerPath": "/home/linuxbrew/.linuxbrew/bin/g++-13"
+    "C_Cpp.default.compilerPath": "/home/linuxbrew/.linuxbrew/bin/g++-13",
+    "output.smartScroll.enabled": false
 }
