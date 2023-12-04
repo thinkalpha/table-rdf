@@ -85,6 +85,8 @@ void field::write_str(mem_t* base, value_t<T> value) const
 
   // See comment in types.h.
   static_assert(alignof(prefix_t) >= alignof(char_type));
+  static_assert(alignof(prefix_t) == sizeof(prefix_t));     // Assumed by the payload offset calculation.
+  static_assert(alignof(char_type) == sizeof(char_type));   // TODO: Improve this.
   constexpr auto k_payload_offset = std::max(sizeof(prefix_t), sizeof(char_type));
 
   auto const length = value.length() * sizeof(char_type);
@@ -111,6 +113,8 @@ value_t<T> const field::read_str(mem_t const* base) const
 
   // See comment in types.h.
   static_assert(alignof(prefix_t) >= alignof(char_type));
+  static_assert(alignof(prefix_t) == sizeof(prefix_t));     // Assumed by the payload offset calculation.
+  static_assert(alignof(char_type) == sizeof(char_type));   // TODO: Improve this.
   constexpr auto k_payload_offset = std::max(sizeof(prefix_t), sizeof(char_type));
 
   auto const length = *offset_ptr<prefix_t const>(base) / sizeof(char_type);
