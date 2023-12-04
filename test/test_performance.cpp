@@ -46,6 +46,33 @@ inline void generate_records(mem_t* dest, descriptor const& d, size_t count)
   }
 }
 
+// inline void read_write_all_fields(mem_t* write_mem, mem_t const* read_mem, descriptor const& d)
+// {
+#define FIELDS_READ_WRITE(wm, rm, d) \
+  d.fields(0ul).write<Key8>      ( wm, d.fields(0ul).read<Key8>      (rm) ); \
+  d.fields(1ul).write<Key16>     ( wm, d.fields(1ul).read<Key16>     (rm) ); \
+  d.fields(2ul).write<String8>   ( wm, d.fields(2ul).read<String8>   (rm) ); \
+  d.fields(3ul).write<String16>  ( wm, d.fields(3ul).read<String16>  (rm) ); \
+  d.fields(4ul).write<Timestamp> ( wm, d.fields(4ul).read<Timestamp> (rm) ); \
+  d.fields(5ul).write<Char>      ( wm, d.fields(5ul).read<Char>      (rm) ); \
+  d.fields(6ul).write<Utf_Char8> ( wm, d.fields(6ul).read<Utf_Char8> (rm) ); \
+  d.fields(7ul).write<Utf_Char16>( wm, d.fields(7ul).read<Utf_Char16>(rm) ); \
+  d.fields(8ul).write<Utf_Char32>( wm, d.fields(8ul).read<Utf_Char32>(rm) ); \
+  d.fields(9ul).write<Int8>      ( wm, d.fields(9ul).read<Int8>      (rm) ); \
+  d.fields(10ul).write<Int16>    ( wm, d.fields(10ul).read<Int16>    (rm) ); \
+  d.fields(11ul).write<Int32>    ( wm, d.fields(11ul).read<Int32>    (rm) ); \
+  d.fields(12ul).write<Int64>    ( wm, d.fields(12ul).read<Int64>    (rm) ); \
+  d.fields(13ul).write<Uint8>    ( wm, d.fields(13ul).read<Uint8>    (rm) ); \
+  d.fields(14ul).write<Uint16>   ( wm, d.fields(14ul).read<Uint16>   (rm) ); \
+  d.fields(15ul).write<Uint32>   ( wm, d.fields(15ul).read<Uint32>   (rm) ); \
+  d.fields(16ul).write<Uint64>   ( wm, d.fields(16ul).read<Uint64>   (rm) ); \
+  d.fields(17ul).write<Float16>  ( wm, d.fields(17ul).read<Float16>  (rm) ); \
+  d.fields(18ul).write<Float32>  ( wm, d.fields(18ul).read<Float32>  (rm) ); \
+  d.fields(19ul).write<Float64>  ( wm, d.fields(19ul).read<Float64>  (rm) ); \
+  d.fields(20ul).write<Float128> ( wm, d.fields(20ul).read<Float128> (rm) ); \
+  d.fields(21ul).write<Bool>     ( wm, d.fields(21ul).read<Bool>     (rm) );
+// }
+
 TEST_CASE( "read/write", "[perf]" )
 {
   using field = rdf::field;
@@ -144,30 +171,9 @@ TEST_CASE( "read/write", "[perf]" )
             {
               for (int64_t i = range.begin(); i != range.end(); ++i)
               {
-                auto const rm = read_mem + i * d.mem_size();
                 auto const wm = write_mem + i * d.mem_size();
-                d.fields(0ul).write<Key8>      ( wm, d.fields(0ul).read<Key8>      (rm) );
-                d.fields(1ul).write<Key16>     ( wm, d.fields(1ul).read<Key16>     (rm) );
-                d.fields(2ul).write<String8>   ( wm, d.fields(2ul).read<String8>   (rm) );
-                d.fields(3ul).write<String16>  ( wm, d.fields(3ul).read<String16>  (rm) );
-                d.fields(4ul).write<Timestamp> ( wm, d.fields(4ul).read<Timestamp> (rm) );
-                d.fields(5ul).write<Char>      ( wm, d.fields(5ul).read<Char>      (rm) );
-                d.fields(6ul).write<Utf_Char8> ( wm, d.fields(6ul).read<Utf_Char8> (rm) );
-                d.fields(7ul).write<Utf_Char16>( wm, d.fields(7ul).read<Utf_Char16>(rm) );
-                d.fields(8ul).write<Utf_Char32>( wm, d.fields(8ul).read<Utf_Char32>(rm) );
-                d.fields(9ul).write<Int8>      ( wm, d.fields(9ul).read<Int8>      (rm) );
-                d.fields(10ul).write<Int16>    ( wm, d.fields(10ul).read<Int16>    (rm) );
-                d.fields(11ul).write<Int32>    ( wm, d.fields(11ul).read<Int32>    (rm) );
-                d.fields(12ul).write<Int64>    ( wm, d.fields(12ul).read<Int64>    (rm) );
-                d.fields(13ul).write<Uint8>    ( wm, d.fields(13ul).read<Uint8>    (rm) );
-                d.fields(14ul).write<Uint16>   ( wm, d.fields(14ul).read<Uint16>   (rm) );
-                d.fields(15ul).write<Uint32>   ( wm, d.fields(15ul).read<Uint32>   (rm) );
-                d.fields(16ul).write<Uint64>   ( wm, d.fields(16ul).read<Uint64>   (rm) );
-                d.fields(17ul).write<Float16>  ( wm, d.fields(17ul).read<Float16>  (rm) );
-                d.fields(18ul).write<Float32>  ( wm, d.fields(18ul).read<Float32>  (rm) );
-                d.fields(19ul).write<Float64>  ( wm, d.fields(19ul).read<Float64>  (rm) );
-                d.fields(20ul).write<Float128> ( wm, d.fields(20ul).read<Float128> (rm) );
-                d.fields(21ul).write<Bool>     ( wm, d.fields(21ul).read<Bool>     (rm) );
+                auto const rm = read_mem + i * d.mem_size();
+                FIELDS_READ_WRITE(wm, rm, d);
               }
           });
         });
@@ -184,6 +190,31 @@ TEST_CASE( "read/write", "[perf]" )
         [=]()
         {
           std::memcpy(dest_file_addr, src_file_addr, file_size);
+        });
+    };
+
+    REQUIRE(std::memcmp(src_file_addr, dest_file_addr, file_size) == 0);
+  }
+
+  SECTION("rdf (field read / write)")
+  {
+    // Read records from file and write to a second file.
+    BENCHMARK_ADVANCED("rdf (field read / write)")(Catch::Benchmark::Chronometer meter)
+    {
+      meter.measure(
+        [=, &desc]()
+        {
+          auto write_mem = (mem_t*)dest_file_addr;
+          mem_t* read_mem = src_mem;
+          auto const& d = desc;
+
+          for (int64_t i = 0; i < (int64_t)record_count; ++i)
+          {
+            FIELDS_READ_WRITE(write_mem, read_mem, d);
+
+            read_mem += d.mem_size();
+            write_mem += d.mem_size();
+          }
         });
     };
 
@@ -228,52 +259,6 @@ TEST_CASE( "read/write", "[perf]" )
             d.fields(19ul).write<Float64>  ( write_mem, record.get<Float64>   (d.fields(19ul)) );
             d.fields(20ul).write<Float128> ( write_mem, record.get<Float128>  (d.fields(20ul)) );
             d.fields(21ul).write<Bool>     ( write_mem, record.get<Bool>      (d.fields(21ul)) );
-
-            read_mem += d.mem_size();
-            write_mem += d.mem_size();
-          }
-        });
-    };
-
-    REQUIRE(std::memcmp(src_file_addr, dest_file_addr, file_size) == 0);
-  }
-
-  SECTION("rdf (field read / write)")
-  {
-    // Read records from file and write to a second file.
-    BENCHMARK_ADVANCED("rdf (field read / write)")(Catch::Benchmark::Chronometer meter)
-    {
-      meter.measure(
-        [=, &desc]()
-        {
-          auto write_mem = (mem_t*)dest_file_addr;
-          mem_t* read_mem = src_mem;
-          auto const& d = desc;
-
-          for (int64_t i = 0; i < (int64_t)record_count; ++i)
-          {
-            d.fields(0ul).write<Key8>      ( write_mem, d.fields(0ul).read<Key8>      (read_mem) );
-            d.fields(1ul).write<Key16>     ( write_mem, d.fields(1ul).read<Key16>     (read_mem) );
-            d.fields(2ul).write<String8>   ( write_mem, d.fields(2ul).read<String8>   (read_mem) );
-            d.fields(3ul).write<String16>  ( write_mem, d.fields(3ul).read<String16>  (read_mem) );
-            d.fields(4ul).write<Timestamp> ( write_mem, d.fields(4ul).read<Timestamp> (read_mem) );
-            d.fields(5ul).write<Char>      ( write_mem, d.fields(5ul).read<Char>      (read_mem) );
-            d.fields(6ul).write<Utf_Char8> ( write_mem, d.fields(6ul).read<Utf_Char8> (read_mem) );
-            d.fields(7ul).write<Utf_Char16>( write_mem, d.fields(7ul).read<Utf_Char16>(read_mem) );
-            d.fields(8ul).write<Utf_Char32>( write_mem, d.fields(8ul).read<Utf_Char32>(read_mem) );
-            d.fields(9ul).write<Int8>      ( write_mem, d.fields(9ul).read<Int8>      (read_mem) );
-            d.fields(10ul).write<Int16>    ( write_mem, d.fields(10ul).read<Int16>    (read_mem) );
-            d.fields(11ul).write<Int32>    ( write_mem, d.fields(11ul).read<Int32>    (read_mem) );
-            d.fields(12ul).write<Int64>    ( write_mem, d.fields(12ul).read<Int64>    (read_mem) );
-            d.fields(13ul).write<Uint8>    ( write_mem, d.fields(13ul).read<Uint8>    (read_mem) );
-            d.fields(14ul).write<Uint16>   ( write_mem, d.fields(14ul).read<Uint16>   (read_mem) );
-            d.fields(15ul).write<Uint32>   ( write_mem, d.fields(15ul).read<Uint32>   (read_mem) );
-            d.fields(16ul).write<Uint64>   ( write_mem, d.fields(16ul).read<Uint64>   (read_mem) );
-            d.fields(17ul).write<Float16>  ( write_mem, d.fields(17ul).read<Float16>  (read_mem) );
-            d.fields(18ul).write<Float32>  ( write_mem, d.fields(18ul).read<Float32>  (read_mem) );
-            d.fields(19ul).write<Float64>  ( write_mem, d.fields(19ul).read<Float64>  (read_mem) );
-            d.fields(20ul).write<Float128> ( write_mem, d.fields(20ul).read<Float128> (read_mem) );
-            d.fields(21ul).write<Bool>     ( write_mem, d.fields(21ul).read<Bool>     (read_mem) );
 
             read_mem += d.mem_size();
             write_mem += d.mem_size();
