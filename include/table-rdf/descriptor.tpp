@@ -19,7 +19,7 @@ namespace rdf
     }
 
     // Create a vector of field indices [0, 1, 2, ...].
-    std::vector<field::index_t> indices(fields_.size());
+    std::vector<index_t> indices(fields_.size());
     std::iota(std::begin(indices), std::end(indices), 0);
 
     if (pack)
@@ -72,13 +72,13 @@ namespace rdf
     return fmt::to_string(out);
   }
 
-  std::string descriptor::describe(bool sort_by_alignment) const
+  std::string descriptor::describe(bool sort_by_offset) const
   {
-    std::vector<field::index_t> indices(fields_.size());
+    std::vector<index_t> indices(fields_.size());
     std::iota(std::begin(indices), std::end(indices), 0);
-    if (sort_by_alignment) {
+    if (sort_by_offset) {
       std::ranges::sort(indices, [&](auto a, auto b) {
-        return fields_[a].align() > fields_[b].align();
+        return fields_[a].offset() < fields_[b].offset();
       });
     }
 
@@ -86,7 +86,7 @@ namespace rdf
       std::stringstream ss;
       ss << "\n--- " << name() << " ---\n";
       for (auto i : indices) {
-        ss << fields(i).describe() << "\n";
+        ss << fields(i).describe(i) << "\n";
       }
       ss << "--- size: " << mem_size() << ", alignment: " << mem_align() << " ---\n";
       return ss.str();

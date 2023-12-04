@@ -15,8 +15,14 @@ namespace rdf
 class descriptor final
 {
 public:
-  // If pack is true, field offsets are sorted by descending alignment, 
-  // but the order of the fields in the descriptor is preserved.
+  // Construct a descriptor from a vector of fields.
+  // The memory layout is computed to mimic C++ struct layout rules:
+  //   - mem_align() is the size and alignment of the largest field.
+  //   - Each offset will respect the corresponding field's alignment.
+  //   - mem_size() includes padding for alignment to mem_align().
+  // If pack is true, field offsets are sorted by descending alignment.
+  // The index order of the fields argument is always preserved in the descriptor, i.e. desc.fields(i) == fields[i].
+  // Use describe() to print the descriptor layout.
   inline descriptor(std::string const& name,
                     std::vector<field> const& fields,
                     bool pack = true);
@@ -28,11 +34,11 @@ public:
   std::string_view          name() const { return name_; }
 
   std::vector<field> const& fields() const { return fields_; }
-               field const& fields(field::index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
+               field const& fields(index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
                field const& fields(char const* name) const { return fields_by_name_.at(name); }
   
      field::offset_t        offset(char const* name) const { return fields(name).offset(); }
-     field::offset_t        offset(field::index_t index) const { return fields(index).offset(); }
+     field::offset_t        offset(index_t index) const { return fields(index).offset(); }
 
   size_t mem_size() const { return mem_size_; }     // The in-memory size including padding for alignment to mem_align().
   size_t mem_align() const { return mem_align_; }

@@ -143,10 +143,10 @@ void field::validate() const
   }
 }
 
-std::string field::describe() const
+std::string field::describe(index_t i) const
 {
-  return fmt::format("{:25} (type: {:8} size: {:3} align: {:3}, offset: {:4}) - '{}'",
-                     name(), type_name(), size(), align(), offset(), description());
+  return fmt::format("[index: {:2}] {:25} (type: {:8} size: {:3} align: {:3}, offset: {:4}) - '{}'",
+                     i, name(), type_name(), size(), align(), offset(), description());
 }
 
 } // namespace rdf

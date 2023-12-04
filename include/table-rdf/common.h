@@ -22,6 +22,7 @@ namespace rdf
 
   using string_t = std::string_view;
   using key_t = string_t;
+  using index_t = size_t;
 
   #if TRDF_HAS_CHRONO_PARSE
     #define CHRONO_PARSE_NAMESPACE std::chrono

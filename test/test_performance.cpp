@@ -73,7 +73,7 @@ inline void generate_records(mem_t* dest, descriptor const& d, size_t count)
   d.fields(21ul).write<Bool>     ( wm, d.fields(21ul).read<Bool>     (rm) );
 // }
 
-TEST_CASE( "read/write", "[perf]" )
+TEST_CASE( "read/write", "[!benchmark]" )
 {
   using field = rdf::field;
   using namespace types;

@@ -245,8 +245,11 @@ TEST_CASE( "basic usage", "[core]" )
       for (auto r : records) {
         SPDLOG_DEBUG(r.to_string(d));
       }
-      
+
+      SPDLOG_DEBUG("Descriptor (field ordering):");
       SPDLOG_DEBUG(d.describe());
+      SPDLOG_DEBUG("Descriptor (offset ordering):");
+      SPDLOG_DEBUG(d.describe(true));
     }
 
     free(mem_alloc);
