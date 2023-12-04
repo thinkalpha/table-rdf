@@ -42,6 +42,8 @@ public:
   size_t mem_size() const { return mem_size_; }     // The in-memory size including padding for alignment to mem_align().
   size_t mem_align() const { return mem_align_; }
 
+  inline field const& find(type t) const;
+
   // Logging.
   inline std::string describe(bool sort_by_alignment = false) const;
   inline std::string header() const;

@@ -66,6 +66,18 @@ namespace rdf
   {
   }
 
+  field const& descriptor::find(type t) const
+  {
+    auto it = std::ranges::find_if(fields(), [t](auto const& f) {
+        return f.type() == t;
+    });
+    if (it != fields().end()) {
+        return *it;
+    } else {
+      throw std::runtime_error(fmt::format("no field of type '{}' found", rdf::types::enum_names_type(t)));
+    }
+  }
+
   std::string descriptor::header() const
   {
     auto out = fmt::memory_buffer();
