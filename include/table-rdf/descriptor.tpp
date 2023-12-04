@@ -20,7 +20,7 @@ namespace rdf
     }
 
     // Create a vector of field indices [0, 1, 2, ...].
-    std::vector<index_t> indices(fields_.size());
+    std::vector<field::index_t> indices(fields_.size());
     std::iota(std::begin(indices), std::end(indices), 0);
 
     if (pack)
@@ -32,12 +32,16 @@ namespace rdf
     }
 
     // Compute offsets so that the in-memory layout is in order of indices vector.
-    fields_[indices[0]].offset_ = 0;
-    auto max_align = fields_[indices[0]].align();
+    // The index order of the fields argument is always preserved in the descriptor, i.e. desc.fields(i) == fields[i].
+    auto const i0 = indices[0];
+    fields_[i0].offset_ = 0;
+    fields_[i0].index_ = i0;
+    auto max_align = fields_[i0].align();
     for (auto [a, b] : indices | std::views::adjacent<2>)
     {
       auto offset_ptr = (void*)(fields_[a].offset() + fields_[a].size());
       fields_[b].offset_ = (field::offset_t)bal::align_up(offset_ptr, fields_[b].align());
+      fields_[b].index_ = b;
       max_align = std::max(max_align, fields_[b].align());
     }
 
@@ -75,7 +79,7 @@ namespace rdf
 
   std::string descriptor::describe(bool sort_by_offset) const
   {
-    std::vector<index_t> indices(fields_.size());
+    std::vector<field::index_t> indices(fields_.size());
     std::iota(std::begin(indices), std::end(indices), 0);
     if (sort_by_offset) {
       std::ranges::sort(indices, [&](auto a, auto b) {

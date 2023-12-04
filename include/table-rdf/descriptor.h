@@ -36,12 +36,9 @@ public:
   std::string_view          name() const { return name_; }
 
   std::vector<field> const& fields() const { return fields_; }
-               field const& fields(index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
+               field const& fields(field::index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
                field const& fields(char const* name) const { return fields_by_name_.at(name); }
   
-     field::offset_t        offset(char const* name) const { return fields(name).offset(); }
-     field::offset_t        offset(index_t index) const { return fields(index).offset(); }
-
   size_t mem_size() const { return mem_size_; }     // The in-memory size including padding for alignment to mem_align().
   size_t mem_align() const { return mem_align_; }
 
@@ -52,7 +49,7 @@ public:
 private:
   std::string name_;
   std::vector<field> fields_;
-  std::map<field::name_t, field const&> fields_by_name_;
+  std::map<std::string, field const&> fields_by_name_;
   size_t mem_size_;
   size_t mem_align_;
 };

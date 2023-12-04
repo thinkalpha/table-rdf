@@ -21,18 +21,18 @@ struct field
   friend class descriptor;
 
   using offset_t = uintptr_t;
-  using name_t = std::string;
-  using description_t = std::string;
+  using index_t = size_t;
 
   static constexpr offset_t k_null_offset = offset_t(-1);
+  static constexpr index_t  k_null_index = index_t(-1);
   static constexpr size_t   k_no_payload = 0;
 
   // TODO: On GCC this is 16 due to float128 being considered a primitive type.
   // We should instead compute this based on the max alignment in field::k_type_props.
   static constexpr size_t   k_record_alignment = sizeof(max_align_t);
 
-  field(name_t name,
-        description_t description,
+  field(std::string const& name,
+        std::string const& description,
         types::type type,
         // Records must be fixed-size, so e.g. string types define a maximum string length (payload).
         size_t payload = k_no_payload,
@@ -43,7 +43,8 @@ struct field
       type_{type},
       payload_{payload},
       fmt_{fmt},
-      offset_{k_null_offset}      // Offset is calculated by descriptor.
+      offset_{k_null_offset},      // Offset is calculated by descriptor.
+      index_{k_null_index}         // Index is calculated by descriptor.
   {
     BOOST_ASSERT_MSG(!string_type(type_) || payload_ != k_no_payload, "string types require a maximum payload size to be specified");
   }
@@ -58,6 +59,7 @@ struct field
   auto payload() const { return payload_; }
   auto fmt() const { return fmt_; }
   auto offset() const { BOOST_ASSERT(offset_ != k_null_offset); return offset_; }
+  auto index() const { return index_; }
 
   auto size() const { return types::k_type_props[type_].size_ + payload(); }   // Size of the field including payload. Does not include padding.
   auto align() const { return types::k_type_props[type_].alignment_; }
@@ -74,12 +76,13 @@ private:
   template <types::type T> void validate() const;
 
 private:
-  name_t name_;
-  description_t description_;
+  std::string name_;
+  std::string description_;
   types::type type_;
   size_t payload_;
   fmt::basic_runtime<char> fmt_;  // fmt library format specifier for printing (https://hackingcpp.com/cpp/libs/fmt.html).
-  offset_t offset_;               // TODO: Keep this const.
+  offset_t offset_;
+  index_t index_;
 };
 
 } // namespace rdf
