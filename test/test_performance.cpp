@@ -133,7 +133,7 @@ TEST_CASE( "read/write", "[!benchmark]" )
   ipc::mapped_region src_region(src_mapping, ipc::read_write);    // Map the whole file with read-write permissions in this process.
   void* src_file_addr = src_region.get_address();                 // Get the address of the mapped region.
   REQUIRE(src_region.get_size() == file_size);
-  REQUIRE(bal::is_aligned(field::k_record_alignment, src_file_addr));
+  REQUIRE(bal::is_aligned(desc.mem_align(), src_file_addr));
   auto const src_mem = (mem_t*)src_file_addr;
 
   generate_records(src_mem, desc, record_count);
@@ -152,7 +152,7 @@ TEST_CASE( "read/write", "[!benchmark]" )
   ipc::mapped_region dest_region(dest_mapping, ipc::read_write);
   void* dest_file_addr = dest_region.get_address();
   REQUIRE(dest_region.get_size() == file_size);
-  REQUIRE(bal::is_aligned(field::k_record_alignment, dest_file_addr));
+  REQUIRE(bal::is_aligned(desc.mem_align(), dest_file_addr));
 
   SECTION("tbb rdf (field read / write)")
   {

@@ -158,8 +158,8 @@ TEST_CASE( "basic usage", "[core]" )
 
   SECTION("record write")
   {
-    mem_t* const mem_alloc = (mem_t*)std::aligned_alloc(field::k_record_alignment, d.mem_size() * k_count);
-    REQUIRE(boost::alignment::is_aligned(field::k_record_alignment, mem_alloc));
+    mem_t* const mem_alloc = (mem_t*)std::aligned_alloc(d.mem_align(), d.mem_size() * k_count);
+    REQUIRE(boost::alignment::is_aligned(d.mem_align(), mem_alloc));
     auto mem = mem_alloc;
 
     timestamp_t const time = timestamp_t::clock::now();
