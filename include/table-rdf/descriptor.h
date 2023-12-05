@@ -45,7 +45,7 @@ public:
   inline field const& find(type t) const;
 
   // Logging.
-  inline std::string describe(bool sort_by_alignment = false) const;
+  inline std::string describe(bool sort_by_offset = false) const;
   inline std::string header() const;
 
 private:
