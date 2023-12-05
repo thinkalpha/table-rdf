@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-using namespace rdf::types;
-
 namespace rdf {
 
 struct field
@@ -45,8 +43,8 @@ struct field
     BOOST_ASSERT_MSG(!string_type(type_) || payload_ != k_no_payload, "string types require a maximum payload size to be specified");
   }
 
-  template <type T> void             write(mem_t* base, value_t<T> const value) const;
-  template <type T> value_t<T> const read(mem_t const* base) const;
+  template <types::type T> void                    write(mem_t* base, types::value_t<T> const value) const;
+  template <types::type T> types::value_t<T> const read(mem_t const* base) const;
 
   auto name() const { return name_; }
   auto description() const { return description_; }
@@ -63,8 +61,8 @@ struct field
   inline std::string describe(index_t i) const;
 
 private:
-  template<types::type T> void             write_str(mem_t* base, value_t<T> value) const;
-  template<types::type T> value_t<T> const read_str(mem_t const* base) const;
+  template<types::type T> void                    write_str(mem_t* base, types::value_t<T> value) const;
+  template<types::type T> types::value_t<T> const read_str(mem_t const* base) const;
 
   template<class V>  V const* offset_ptr(mem_t const* base) const;
   template<class V>  V*       offset_ptr(mem_t* base) const;

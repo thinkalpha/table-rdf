@@ -4,6 +4,7 @@
 
 namespace rdf {
 
+using namespace types;
 namespace bal = boost::alignment;
 
 #ifndef BOOST_ASSERT_IS_NULL
@@ -122,7 +123,7 @@ value_t<T> const field::read_str(mem_t const* base) const
   return { chars, length };
 }
 
-template <types::type T>
+template <type T>
 void field::validate() const
 {
   using V = value_t<T>;
