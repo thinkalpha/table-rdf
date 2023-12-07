@@ -60,5 +60,10 @@ inline timestamp_t make_timestamp(raw_time_t raw_time)
   return timestamp_t{ timestamp_t::duration{ raw_time } };
 }
 
+inline timestamp_t make_timestamp(std::string_view time_str, std::string_view format)
+{
+  return util::str_to_time(time_str, format);
+}
+
 } // namespace util
 } // namespace rdf
