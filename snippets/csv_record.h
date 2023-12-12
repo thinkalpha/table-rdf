@@ -66,7 +66,7 @@ public:
     assert(desc.fields().size() == values_.size());
     for (size_t i = 0; i < values_.size(); ++i)
     {
-      ss << fmt::format(desc.fields().at(i).fmt_, to_string(values_.at(i)));
+      ss << fmt::format(desc.fields().at(i).fmt(), to_string(values_.at(i)));
     }
     return ss.str();
   }

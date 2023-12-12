@@ -22,15 +22,15 @@ namespace rdf
 
   using string_t = std::string_view;
   using key_t = string_t;
-
-  using key_size_prefix_t = uint8_t;
-  using string_size_prefix_t = uint8_t;
-
+  
   #if TRDF_HAS_CHRONO_PARSE
     #define CHRONO_PARSE_NAMESPACE std::chrono
   #else
     #define CHRONO_PARSE_NAMESPACE date
   #endif
+
+  // Default format for displaying timestamps.
+  static constexpr char const* k_time_to_str_fmt = "{:%Y%m%d %T}";
 
   // TODO: Current system uses this "key plus" structure that includes both a symbol key and sec ID.
   // struct key_plus_t {

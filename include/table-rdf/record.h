@@ -9,7 +9,7 @@
 namespace rdf
 {
 // Base record type.
-class record final
+class record
 {
 public:
   record(mem_t const* mem)
@@ -19,94 +19,88 @@ public:
 
   ~record() = default;
 
-  template<typename T> T const* get_ptr(field::offset_t o) const {
-    T const* value = reinterpret_cast<T const*>(mem_ + o);
-    return value;
+  template <types::type T>
+  inline value_t<T> const get(const field& f) const
+  {
+    return f.read<T>(memory());
   }
 
-  template<typename T> T get(field::offset_t o) const {
-    T const value = *get_ptr<T>(o);
-    return value;
-  }
-
-  // TODO: Vlad says records don't contain a key. Probably since this is redundant data that can be expressed via collections of records by key.  
-  key_t       key(descriptor const& d) const;
-  timestamp_t timestamp(descriptor const& d) const;
-  std::string timestamp_str(descriptor const& d) const;
-
-  mem_t const* raw() const { return mem_; };
-
-  // Debugging.
-  std::string to_string(descriptor const& desc) const;
+  mem_t const* memory() const;
+  std::string  to_string(descriptor const& desc) const;
 
 private:
   mem_t const* mem_;
 };
 
+template<concepts::record R>
 inline auto mem_to_record(mem_t const& mem) {
-  return record{&mem};
+  return R{&mem};
 }
 
-template<> inline std::string_view record::get(field::offset_t o) const {
-  // TODO: Make more robust with type traits.
-  auto const length = get<uint8_t>(o);
-  return std::string_view(get_ptr<char>(o + sizeof(uint8_t)), length);
-}
-
-inline key_t record::key(descriptor const& d) const
-{
-  return get<key_t>(d.key_o());
-}
-
-inline timestamp_t record::timestamp(descriptor const& d) const
-{
-  auto const raw = get<raw_time_t>(d.timestamp_o());
-  return timestamp_t{ rdf::timestamp_t::duration{ raw } };
-}
-
-inline std::string record::timestamp_str(descriptor const& d) const
-{
-  return d.time_to_str(timestamp(d));
-}
+inline mem_t const* record::memory() const
+{ 
+  return mem_; 
+};
 
 inline std::string record::to_string(descriptor const& desc) const
 {
   auto out = fmt::memory_buffer();
   auto out_it = std::back_inserter(out);
+
+  #define FMT_FIELD(F) \
+    case F: \
+      out_it = fmt::format_to(out_it, f.fmt(), get<F>(f)); \
+      break;
+
   for (auto f : desc.fields()) {
-    switch(f.type_) {
-      case field::key_type:
-        fmt::format_to(out_it, f.fmt_, key(desc));
+    switch(f.type())
+    {
+      FMT_FIELD(Key8);
+      FMT_FIELD(Key16);
+      FMT_FIELD(String8);
+      FMT_FIELD(String16);
+      case Timestamp: {
+        out_it = fmt::format_to(out_it, f.fmt(), util::time_to_str(get<Timestamp>(f)));
         break;
-      case field::timestamp_type:
-        fmt::format_to(out_it, f.fmt_, timestamp_str(desc));
+      }
+      FMT_FIELD(Char);
+      case Utf_Char8: {
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char8>(f));  // TODO: Fix this temporary hack.
         break;
-      case field::char_type:
-        fmt::format_to(out_it, f.fmt_, get<char>(f.offset_));
+      }
+      case Utf_Char16: {
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char16>(f));  // TODO: Fix this temporary hack.
         break;
-      case field::int32_type:
-        fmt::format_to(out_it, f.fmt_, get<int32_t>(f.offset_));
+      }
+      case Utf_Char32: {
+        out_it = fmt::format_to(out_it, f.fmt(), (uint64_t)get<Utf_Char32>(f));  // TODO: Fix this temporary hack.
         break;
-      case field::float32_type:
-        fmt::format_to(out_it, f.fmt_, get<float>(f.offset_));
+      }
+      FMT_FIELD(Int8);
+      FMT_FIELD(Int16);
+      FMT_FIELD(Int32);
+      FMT_FIELD(Int64);
+      FMT_FIELD(Uint8);
+      FMT_FIELD(Uint16);
+      FMT_FIELD(Uint32);
+      FMT_FIELD(Uint64);
+      case Float16: {
+        out_it = fmt::format_to(out_it, f.fmt(), (float)get<Float16>(f));        // TODO: Fix this temporary hack.
         break;
-      case field::int64_type:
-        fmt::format_to(out_it, f.fmt_, get<int64_t>(f.offset_));
+      }
+      FMT_FIELD(Float32);
+      FMT_FIELD(Float64);
+      case Float128: {
+        out_it = fmt::format_to(out_it, f.fmt(), (double)get<Float128>(f));      // TODO: Fix this temporary hack.
         break;
-      case field::float64_type:
-        fmt::format_to(out_it, f.fmt_, get<double>(f.offset_));
-        break;
-      case field::string_type:
-        fmt::format_to(out_it, f.fmt_, get<std::string_view>(f.offset_));
-        break;
-      case field::bool_type:
-        fmt::format_to(out_it, f.fmt_, get<bool>(f.offset_));
-        break;
-      default:
-        BOOST_ASSERT(false);
+      }
+      FMT_FIELD(Bool);
+      case type_numof:
+        BOOST_ASSERT_MSG(false, "invalid field type");
         break;
     }
   }
+
   return fmt::to_string(out);
 }
 

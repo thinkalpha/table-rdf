@@ -17,6 +17,8 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Boost 1.80.0 REQUIRED)
 find_package(date CONFIG REQUIRED)
+find_package(TBB CONFIG REQUIRED)
+
 
 # In particular -Wreorder should be on to protect our use of std::move() in constructor initialiser lists.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -74,23 +76,26 @@ set_property              (TARGET table-rdf PROPERTY MSVC_RUNTIME_LIBRARY "Multi
 # This target can be run directly or invoked via Ctest.
 #
 set(TRDF_CATCH_TESTS test/test_main.cpp
-                     test/test_core.cpp)
+                     test/test_core.cpp
+                     test/test_performance.cpp)
 
 add_executable            (table-rdf-tests ${TRDF_CATCH_TESTS})
 
 set_property              (TARGET table-rdf-tests PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS})
+target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS}
+                                                   -ltbb)
 target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    TRDF_TEST=1
                                                    TRDF_FILE_LOGGING=0
                                                    BOOST_ENABLE_ASSERT_HANDLER
                                                    # TODO: Update to Catch2 v3.0.1 to get support for runtime --skip-benchmarks.
                                                    # https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md#skip-all-benchmarks 
-                                                   #[[CATCH_CONFIG_ENABLE_BENCHMARKING]])
+                                                   CATCH_CONFIG_ENABLE_BENCHMARKING)
 
 target_link_libraries     (table-rdf-tests PRIVATE table-rdf
-                                                   Catch2::Catch2)
+                                                   Catch2::Catch2
+                                                   TBB::tbb)
 
 # Catch2 setup and Ctest integration.
 include(CTest)

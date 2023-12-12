@@ -3,6 +3,7 @@
 #include "common.h"
 #include "util.h"
 #include "field.h"
+#include "fields_builder.h"
 
 #include <map>
 #include <unordered_map>
@@ -11,58 +12,48 @@
 
 namespace rdf
 {
-class descriptor final
+class descriptor
 {
 public:
+  // Construct a descriptor from a vector of fields.
+  // The memory layout is computed to mimic C++ struct layout rules:
+  //   - mem_align() is the size and alignment of the largest field.
+  //   - Each offset will respect the corresponding field's alignment.
+  //   - mem_size() includes padding for alignment to mem_align().
+  // If pack is true, field offsets are sorted by descending alignment.
+  // The index order of the fields argument is always preserved in the descriptor, i.e. desc.fields(i) == fields[i].
+  // Use describe() to print the descriptor layout.
   inline descriptor(std::string const& name,
-             std::string const& time_parse,
-             std::vector<field> const& fields);
+                    std::vector<field> const& fields,
+                    bool pack = true);
 
   inline descriptor(std::string const& name,
-             std::string const& time_parse,
-             fields_builder const& builder);
+                    fields_builder const& builder,
+                    bool pack = true);
+
+  virtual ~descriptor() = default;
 
   std::string_view          name() const { return name_; }
 
   std::vector<field> const& fields() const { return fields_; }
-               field const& fields(char const* field_name) const { return fields_by_name_.at(field_name); }
+               field const& fields(field::index_t index) const { BOOST_ASSERT(index < fields().size()); return fields()[index]; }
+               field const& fields(char const* name) const { return fields_by_name_.at(name); }
   
-     field::offset_t        offset(char const* field_name) const { return fields(field_name).offset_; }
+  size_t mem_size() const { return mem_size_; }     // The in-memory size including padding for alignment to mem_align().
+  size_t mem_align() const { return mem_align_; }
 
-     field::offset_t        key_o() const { return key_offset_; }
-     field::offset_t        timestamp_o() const { return timestamp_offset_; }
+  inline field const& find(type t) const;
 
-      field::index_t        key_i() const { return key_index_; }
-      field::index_t        timestamp_i() const { return timestamp_index_; }
-
-  inline timestamp_t        str_to_time(std::string_view sv) const;
-  inline std::string        time_to_str(timestamp_t ts) const;
-
-         std::string        time_parse() const { return time_parse_; }
-         std::string        time_format() const { return time_format_; }
-
-  // The in-memory size including padding for alignment to k_record_alignment.
-  size_t mem_size() const { return mem_size_; }
-
-  // Debugging.
-  inline std::string describe() const;
+  // Logging.
+  inline std::string describe(bool sort_by_offset = false) const;
   inline std::string header() const;
 
 private:
-  std::string const name_;
-  std::vector<field> const fields_;
-  std::map<field::name_t, field const&> fields_by_name_;
-
-  field::offset_t key_offset_;
-  field::offset_t timestamp_offset_;
-
-  field::index_t key_index_;
-  field::index_t timestamp_index_;
-
-  std::string const time_parse_;    // Because the std::chrono parse function uses a slightly different syntax to the std::format function.
-  std::string const time_format_;
-
+  std::string name_;
+  std::vector<field> fields_;
+  std::map<std::string, field const&> fields_by_name_;
   size_t mem_size_;
+  size_t mem_align_;
 };
 
 } // namespace rdf

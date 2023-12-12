@@ -9,13 +9,14 @@ namespace rdf
 
   namespace views {
 
-    inline auto records(mspan const& memory, descriptor const& d) {
+    template<concepts::record R>
+    auto records(mspan const& memory, descriptor const& d) {
       return memory | 
              std::views::stride(d.mem_size()) |
-             std::views::transform(rdf::mem_to_record);
+             std::views::transform(mem_to_record<R>);
     }
-
-    using records_view_t = decltype(std::function(records))::result_type;
+    template<concepts::record R>
+    using records_view_t = decltype(std::function(records<R>))::result_type;
 
   }
 
