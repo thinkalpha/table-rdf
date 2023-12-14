@@ -20,4 +20,6 @@ namespace rdf
 
   }
 
+  static_assert(std::ranges::random_access_range<rdf::views::records_view_t<rdf::record>>);
+
 } // namespace rdf
