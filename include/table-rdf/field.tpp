@@ -7,7 +7,7 @@ namespace rdf {
 using namespace types;
 namespace bal = boost::alignment;
 
-#ifndef BOOST_ASSERT_IS_NULL
+#ifndef BOOST_ASSERT_IS_VOID
   #define DBG_VALIDATE_FIELD(EnumType) validate<EnumType>()
 #else
   #define DBG_VALIDATE_FIELD(EnumType) (void)0
@@ -126,7 +126,9 @@ value_t<T> const field::read_str(mem_t const* base) const
 template <type T>
 void field::validate() const
 {
-  using V = value_t<T>;
+  #ifndef BOOST_ASSERT_IS_VOID
+    using V = value_t<T>;
+  #endif
 
   BOOST_ASSERT_MSG(type_ == T, fmt::format("field '{}' type '{}' does not match template param '{}'", 
                                             name_, enum_names_type(type_), enum_names_type(T)).c_str());
