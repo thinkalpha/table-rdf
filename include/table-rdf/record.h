@@ -22,10 +22,12 @@ public:
   template <types::type T>
   inline value_t<T> const get(const field& f) const
   {
-    return f.read<T>(memory());
+    return f.read<T>(cmem());
   }
 
-  mem_t const* memory() const;
+  mem_t const* cmem() const;
+  mem_t* mem() const;
+
   std::string  to_string(descriptor const& desc) const;
 
 private:
@@ -37,10 +39,16 @@ inline auto mem_to_record(mem_t const& mem) {
   return R{&mem};
 }
 
-inline mem_t const* record::memory() const
+inline mem_t const* record::cmem() const
 { 
   return mem_; 
 };
+
+inline mem_t* record::mem() const
+{ 
+  return const_cast<mem_t*>(mem_); 
+};
+
 
 inline std::string record::to_string(descriptor const& desc) const
 {
