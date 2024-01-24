@@ -65,15 +65,16 @@ namespace concepts {
                                        std::is_same_v<V, uint8_t> ||
                                        std::is_same_v<V, uint16_t> ||
                                        std::is_same_v<V, uint32_t> ||
-                                       std::is_same_v<V, uint64_t> ||
-                                       std::is_same_v<V, bool>;
+                                       std::is_same_v<V, uint64_t>;
+
+  template<class V> concept boolean = std::is_same_v<V, bool>;
 
   template<class V> concept floating_point = std::is_same_v<V, std::float16_t> ||
                                              std::is_same_v<V, std::float32_t> ||
                                              std::is_same_v<V, std::float64_t> ||
                                              std::is_same_v<V, std::float128_t>;
 
-  template<class V> concept numeric = integral<V> || floating_point<V>;
+  template<class V> concept numeric = boolean<V> || integral<V> || floating_point<V>;
 
   template<class V> concept field_value = numeric<V> || string<V> || timestamp<V>;
 }
