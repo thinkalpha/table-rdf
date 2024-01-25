@@ -42,7 +42,7 @@ struct type_props {
   size_t const alignment_;
 };
 
-#if (__STDCPP_FLOAT32_T__ != 1) || (__STDCPP_FLOAT64_T__ != 1) || (__STDCPP_FLOAT128_T__ != 1)
+#if (__STDCPP_FLOAT16_T__ != 1) || (__STDCPP_FLOAT32_T__ != 1) || (__STDCPP_FLOAT64_T__ != 1) || (__STDCPP_FLOAT128_T__ != 1)
   #error "<stdfloat> types not available"
 #endif
 
