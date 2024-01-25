@@ -60,6 +60,20 @@ struct field
 
   inline std::string describe(index_t i) const;
 
+  bool operator==(field const& other) const {
+    return name_ == other.name_ &&
+           description_ == other.description_ &&
+           type_ == other.type_ &&
+           payload_ == other.payload_ &&
+           fmt_.str == other.fmt_.str &&
+           offset_ == other.offset_ &&
+           index_ == other.index_;
+  }
+
+  bool operator!=(field const& other) const {
+    return !(*this == other);
+  }
+
 private:
   template<types::type T> void                    write_str(mem_t* base, types::value_t<T> value) const;
   template<types::type T> types::value_t<T> const read_str(mem_t const* base) const;

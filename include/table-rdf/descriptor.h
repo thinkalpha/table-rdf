@@ -44,6 +44,18 @@ public:
 
   inline field const& find(type t) const;
 
+  bool operator==(descriptor const& other) const {
+    return name_ == other.name_ &&
+           fields_ == other.fields_ &&
+           fields_by_name_ == other.fields_by_name_ &&
+           mem_size_ == other.mem_size_ &&
+           mem_align_ == other.mem_align_;
+  }
+
+  bool operator!=(descriptor const& other) const {
+    return !(*this == other);
+  }
+
   // Logging.
   inline std::string describe(bool sort_by_offset = false) const;
   inline std::string header() const;
