@@ -74,12 +74,12 @@ struct field
     return !(*this == other);
   }
 
+  template<class V> V const* offset_ptr(mem_t const* base) const;
+  template<class V> V*       offset_ptr(mem_t* base) const;
+
 private:
   template<types::type T> void                    write_str(mem_t* base, types::value_t<T> value) const;
   template<types::type T> types::value_t<T> const read_str(mem_t const* base) const;
-
-  template<class V>  V const* offset_ptr(mem_t const* base) const;
-  template<class V>  V*       offset_ptr(mem_t* base) const;
 
   template <types::type T> void validate() const;
 
