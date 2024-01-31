@@ -32,6 +32,9 @@ namespace rdf
   // Default format for displaying timestamps.
   static constexpr char const* k_time_to_str_fmt = "{:%Y%m%d %T}";
 
+  // Default format for parsing timestamps.
+  static constexpr char const* k_str_to_time_fmt = "%Y%m%d %T";
+
   // TODO: Current system uses this "key plus" structure that includes both a symbol key and sec ID.
   // struct key_plus_t {
   //   string_t symbol;
