@@ -12,7 +12,10 @@ namespace rdf
   //    - lack of operator== for no good reason imo.
   // TODO: Would it be possible to use a static-extent span with dynamic descriptors.
   // TODO: std::span also cannot have a runtime stride over it's data. We need a custom type.
+  // TODO: Switch to using my_mspan.size() instead of my_mspan.size_bytes() where appropriate, they should be equivalent.
   using mspan = std::span<mem_t const>;
+  
+  static_assert(std::ranges::random_access_range<mspan>);
 
   using timestamp_t = std::chrono::sys_time<std::chrono::nanoseconds>;
   using raw_time_t = timestamp_t::duration::rep;
