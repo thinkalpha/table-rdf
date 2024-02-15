@@ -34,7 +34,8 @@ else()
 endif()
 
 set(TRDF_COMPILE_DEFS TRDF_ASYNC_LOGGING=$<CONFIG:Release>
-                      TRDF_HAS_CHRONO_PARSE=${TRDF_HAS_CHRONO_PARSE})
+                      TRDF_HAS_CHRONO_PARSE=${TRDF_HAS_CHRONO_PARSE}
+                      BOOST_ENABLE_ASSERT_DEBUG_HANDLER)
 
 set(TRDF_LINK_LIBS spdlog::spdlog
                    # Use Howard Hinnant's date library for libcpp implementations that do not implement std::chrono parsing.
@@ -88,7 +89,7 @@ target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS}
 target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    TRDF_TEST=1
                                                    TRDF_FILE_LOGGING=0
-                                                   BOOST_ENABLE_ASSERT_HANDLER
+                                                   BOOST_ENABLE_ASSERT_DEBUG_HANDLER
                                                    # TODO: Update to Catch2 v3.0.1 to get support for runtime --skip-benchmarks.
                                                    # https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md#skip-all-benchmarks 
                                                    CATCH_CONFIG_ENABLE_BENCHMARKING)
