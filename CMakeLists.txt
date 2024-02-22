@@ -35,6 +35,9 @@ endif()
 
 set(TRDF_COMPILE_DEFS TRDF_ASYNC_LOGGING=$<CONFIG:Release>
                       TRDF_HAS_CHRONO_PARSE=${TRDF_HAS_CHRONO_PARSE}
+                      # To aid in debugging timestamp log output. This will add different ANSI-colors each timestamp 
+                      # string based on the string hash. Note: This causes some timestamp parsing tests to fail.
+                      TRDF_TIMESTAMP_COLORING=0
                       BOOST_ENABLE_ASSERT_DEBUG_HANDLER)
 
 set(TRDF_LINK_LIBS spdlog::spdlog
@@ -89,7 +92,6 @@ target_compile_options    (table-rdf-tests PRIVATE ${TRDF_COMPILE_OPTIONS}
 target_compile_definitions(table-rdf-tests PRIVATE ${TRDF_COMPILE_DEFS}
                                                    TRDF_TEST=1
                                                    TRDF_FILE_LOGGING=0
-                                                   BOOST_ENABLE_ASSERT_DEBUG_HANDLER
                                                    # TODO: Update to Catch2 v3.0.1 to get support for runtime --skip-benchmarks.
                                                    # https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md#skip-all-benchmarks 
                                                    CATCH_CONFIG_ENABLE_BENCHMARKING)
