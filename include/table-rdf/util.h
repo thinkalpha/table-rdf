@@ -5,7 +5,9 @@
 #endif
 
 #include <fmt/core.h>
-#include <fmt/color.h>
+#if TRDF_TIMESTAMP_COLORING
+  #include <fmt/color.h>
+#endif
 
 namespace rdf {
 namespace util {
