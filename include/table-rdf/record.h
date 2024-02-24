@@ -26,7 +26,7 @@ public:
   }
 
   mem_t const* cmem() const;
-  mem_t* mem() const;
+  mem_t* mem();
 
   std::string  to_string(descriptor const& desc) const;
 
@@ -44,7 +44,7 @@ inline mem_t const* record::cmem() const
   return mem_; 
 };
 
-inline mem_t* record::mem() const
+inline mem_t* record::mem()
 { 
   return const_cast<mem_t*>(mem_); 
 };
