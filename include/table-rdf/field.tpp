@@ -134,10 +134,10 @@ void field::validate() const
                                             name_, enum_names_type(type_), enum_names_type(T)).c_str());
 
   if constexpr (string_type(T)) {
-    BOOST_ASSERT_MSG(payload() > 0, fmt::format("non-string field '{}' should not have a payload", name_).c_str());
+    BOOST_ASSERT_MSG(payload() > 0, fmt::format("string field '{}' should have a payload", name_).c_str());
   }
   else {
-    BOOST_ASSERT_MSG(payload() == 0, fmt::format("string field '{}' should have a payload", name_).c_str());
+    BOOST_ASSERT_MSG(payload() == 0, fmt::format("non-string field '{}' should not have a payload", name_).c_str());
     BOOST_ASSERT_MSG(sizeof(V) == size(), fmt::format("field '{}' size = {}B does not match value param sizeof({}) = {}B",
                                                       name_, size(), typeid(V).name(), sizeof(V)).c_str());
     BOOST_ASSERT_MSG(alignof(V) == align(), fmt::format("field '{}' alignment = {}B which does not match value parameter alignof({}) = {}B",
